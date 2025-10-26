@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "typer[all]"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ptbenchmark"
+version = "0.1.0"
+description = "CLI tool for dataset management and benchmarking"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["typer[all]"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+ptbenchmark = [
+    "../libs/**/*",
+]
+
+[tool.setuptools.packages.find]
+include = ["ptbenchmark*"]
+
+[project.scripts]
+ptbenchmark = "ptbenchmark.app:app"
