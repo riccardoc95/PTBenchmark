@@ -98,7 +98,7 @@ def lifetime_denoise_tree(values, lifetimes, parents, child_index, children_all,
     return v.reshape(rows, cols)
 
 
-def perstree_anisodiff(img, gth, max_iter=100,lifetime_t=None, cut=True, cut_mode="nearest"):
+def perstree_anisodiff(img, gth, max_iter=100, lifetime_t=None, cut=False, cut_mode="nearest"):
     tree = PersTree(img, lifetime_t=lifetime_t, cut=cut, cut_mode=cut_mode)
     labels = tree.features[:,0].astype(int).copy()
     values = tree.features[:,1].copy()

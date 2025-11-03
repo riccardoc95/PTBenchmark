@@ -1,11 +1,11 @@
 import typer
-import h5py
-import numpy as np
 import os
 import subprocess
-import pandas as pd
 from pathlib import Path
-import gdown
+
+from ptbenchmark.tests.test_method import test_method, supervised_methods, unsupervised_methods
+from ptbenchmark.tests.test_distance import test_pt_distance
+from ptbenchmark.tests.test_sec import test_sec
 
 app = typer.Typer()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -97,11 +97,59 @@ def test(
         "-d",
         help=f"Dataset name. Available: {', '.join(DATASETS.keys())}",
     ),
+    mode: str = typer.Option(
+        "method",
+        "--mode",
+        "-m",
+        help="Test mode: 'method' (supervised/unsupervised), 'distance' (RD/RF), or 'entropy' (spatial entropy change).",
+    ),
+    method: str = typer.Option(
+        "perstree",
+        "--method",
+        help=f"Method name for --mode method ({', '.join(list(unsupervised_methods.keys()))}, "
+             f"{', '.join(list(supervised_methods.keys()))}).",
+    ),
+    distance: str = typer.Option(
+        "RD",
+        "--distance",
+        help="Distance type for --mode distance (RD or RF).",
+    ),
+    device: str = typer.Option(
+        "cpu",
+        "--device",
+        help="Device for supervised methods (cpu or cuda).",
+    ),
+    n_epochs: int = typer.Option(
+        20,
+        "--epochs",
+        help="Number of training epochs (for supervised).",
+    )
 ):
-    """
-    Run a test
-    """
-    pass
+    datasets_dir = "datasets"
+    output_file = os.path.join("results", "results_all.h5")
+    os.makedirs("results", exist_ok=True)
+
+    typer.echo(f"\nRunning test for dataset: {dataset}")
+    typer.echo(f"Mode: {mode}")
+    typer.echo(f"Output file: {output_file}\n")
+
+    if mode == "method":
+        typer.echo(f"Running denoising method: {method}")
+        test_method(method, dataset, datasets_dir, output_file, device=device, n_epochs=n_epochs)
+
+    elif mode == "distance":
+        typer.echo(f"Running persistence distance: {distance}")
+        test_pt_distance(datasets_dir, dataset, output_file, distance)
+
+    elif mode == "entropy":
+        typer.echo(f"Running spatial entropy change (perstree_rec_sec)")
+        test_sec(datasets_dir, dataset, output_file)
+
+    else:
+        typer.echo(f"Unknown mode '{mode}'. Must be one of: method, distance, entropy.")
+        raise typer.Exit()
+
+    typer.echo("\nTest completed successfully!\n")
 
 
 if __name__ == "__main__":
