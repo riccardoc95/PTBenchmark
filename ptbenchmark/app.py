@@ -1,11 +1,14 @@
 import typer
 import os
 import subprocess
+import h5py
+import gdown
 from pathlib import Path
 
 from ptbenchmark.tests.test_method import test_method, supervised_methods, unsupervised_methods
 from ptbenchmark.tests.test_distance import test_pt_distance
 from ptbenchmark.tests.test_sec import test_sec
+from ptbenchmark.utils import merge_h5_files
 
 app = typer.Typer()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,10 +24,6 @@ DATASETS = {
     "SIDD": "1E3rZuH6vnmyXk_1IxyB_8IJWeXuwSu9U",
 }
 
-
-# ==========================================================
-# 1 INSTALL SOFTWARE LIBRARIES
-# ==========================================================
 @app.command()
 def install():
     """
@@ -45,9 +44,6 @@ def install():
         subprocess.run(["pip", "install", library], check=True)
         typer.echo(f"{library} installed successfully.")
 
-# ==========================================================
-# 2 DOWNLOAD DATASETS
-# ==========================================================
 @app.command()
 def download_dataset(
     dataset: str = typer.Option(
@@ -84,11 +80,6 @@ def download_dataset(
         gdown.download(id=url, output=h5_path, quiet=False)
         typer.echo(f"Done!")
 
-
-
-# ==========================================================
-# 3 TESTS AND PRINT STATISTICS
-# ==========================================================
 @app.command()
 def test(
     dataset: str = typer.Option(
@@ -123,11 +114,19 @@ def test(
         20,
         "--epochs",
         help="Number of training epochs (for supervised).",
+    ),
+    datasets_dir: str = typer.Option(
+        "datasets",
+        "--datasets-dir",
+        help="Input dataset directory.",
+    ),
+    output_file: str = typer.Option(
+        "results/results.h5",
+        "--output",
+        help="Output .h5 file for results.",
     )
 ):
-    datasets_dir = "datasets"
-    output_file = os.path.join("results", "results_all.h5")
-    os.makedirs("results", exist_ok=True)
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
     typer.echo(f"\nRunning test for dataset: {dataset}")
     typer.echo(f"Mode: {mode}")
@@ -151,6 +150,23 @@ def test(
 
     typer.echo("\nTest completed successfully!\n")
 
+
+@app.command()
+def merge(
+    input_dir: str = typer.Option(
+        ...,
+        "--input-dir",
+        "-i",
+        help="Directory containing HDF5 files to merge.",
+    ),
+    output_file: str = typer.Option(
+        "results/results_all_merged.h5",
+        "--output",
+        "-o",
+        help="Output merged HDF5 file.",
+    ),
+):
+    merge_h5_files(input_dir, output_file)
 
 if __name__ == "__main__":
     app()

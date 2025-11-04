@@ -109,6 +109,7 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
             training_time = time.time() - start_train
 
             all_mse, all_psnr, all_ssim = [], [], []
+            all_time, all_training_time = [], []
 
             model.eval()
             with torch.no_grad():
@@ -131,6 +132,8 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                         all_mse.append(mse)
                         all_psnr.append(psnr_val)
                         all_ssim.append(ssim_val)
+                        all_time.append(elapsed)
+                        all_training_time.append(training_time)
 
                         save_to_h5(
                             output_file,
@@ -143,8 +146,9 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                                 "mse": mse,
                                 "psnr": psnr_val,
                                 "ssim": ssim_val,
-                                "params": {"epochs": n_epochs, "training_time": training_time},
-                                "time": elapsed
+                                "params": {"epochs": n_epochs},
+                                "training_time": training_time,
+                                "time": elapsed,
                             },
                         )
 
@@ -156,6 +160,10 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                 "var_psnr": np.var(all_psnr),
                 "mean_ssim": np.mean(all_ssim),
                 "var_ssim": np.var(all_ssim),
+                "mean_time": np.mean(all_time),
+                "var_time": np.var(all_time),
+                "mean_training_time": np.mean(all_training_time),
+                "var_training_time": np.var(all_training_time),
             }
 
             save_metrics_summary(output_file, dataset_name, subset, method_name, metrics)
@@ -164,6 +172,8 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
             print(f"   MSE  mean={metrics['mean_mse']:.6f}, var={metrics['var_mse']:.6f}")
             print(f"   PSNR mean={metrics['mean_psnr']:.3f}, var={metrics['var_psnr']:.3f}")
             print(f"   SSIM mean={metrics['mean_ssim']:.3f}, var={metrics['var_ssim']:.3f}\n")
+            print(f"   TIME mean={metrics['mean_time']:.4f}s, var={metrics['var_time']:.4f}")
+            print(f"   TRAIN mean={metrics['mean_training_time']:.4f}s, var={metrics['var_training_time']:.4f}\n")
 
     else:
         if method_name.lower() not in unsupervised_methods:
@@ -175,6 +185,7 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
             dataset.set_subset(subset)
 
             all_mse, all_psnr, all_ssim = [], [], []
+            all_time, all_training_time = [], []
 
             for image_name, img, gth in tqdm(dataset, desc=f"{dataset_name}/{subset}"):
                 t0 = time.time()
@@ -186,6 +197,8 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                 all_mse.append(mse)
                 all_psnr.append(psnr_val)
                 all_ssim.append(ssim_val)
+                all_time.append(params['time'])
+                all_training_time.append(elapsed)
 
                 save_to_h5(
                     output_file,
@@ -193,8 +206,16 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                     subset,
                     image_name,
                     method_name,
-                    {"rec": rec, "mse": mse, "psnr": psnr_val, "ssim": ssim_val, "params": params, "time": elapsed},
+                    {
+                        "rec": rec,
+                        "mse": mse,
+                        "psnr": psnr_val,
+                        "ssim": ssim_val,
+                        "params": params,
+                        "training_time": elapsed,
+                        "time": params['time']},
                 )
+
 
             # Statistiche globali
             metrics = {
@@ -204,6 +225,10 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                 "var_psnr": np.var(all_psnr),
                 "mean_ssim": np.mean(all_ssim),
                 "var_ssim": np.var(all_ssim),
+                "mean_time": np.mean(all_time),
+                "var_time": np.var(all_time),
+                "mean_training_time": np.mean(all_training_time),
+                "var_training_time": np.var(all_training_time),
             }
 
             save_metrics_summary(output_file, dataset_name, subset, method_name, metrics)
@@ -212,6 +237,9 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
             print(f"   MSE  mean={metrics['mean_mse']:.6f}, var={metrics['var_mse']:.6f}")
             print(f"   PSNR mean={metrics['mean_psnr']:.3f}, var={metrics['var_psnr']:.3f}")
             print(f"   SSIM mean={metrics['mean_ssim']:.3f}, var={metrics['var_ssim']:.3f}\n")
+            print(f"   TIME mean={metrics['mean_time']:.4f}s, var={metrics['var_time']:.4f}")
+            print(f"   TRAIN mean={metrics['mean_training_time']:.4f}s, var={metrics['var_training_time']:.4f}\n")
+
 
 
 

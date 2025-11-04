@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "typer[all]"]
+requires = ["setuptools>=61.0", "wheel", "typer[all]", "h5py", "gdown"]
 build-backend = "setuptools.build_meta"
 
 [project]
