@@ -1,160 +1,157 @@
+# PTBenchmark
 
-# PHBenchmark — Persistent Homology Benchmark CLI
+PTBenchmark is a **Python benchmarking framework and CLI tool** for Persistence Trees (PTs) and related topological descriptors derived from persistent homology. It provides utilities to download datasets, run standardized benchmarks (methods, distances, entropy), and merge results for reproducible experiments.
 
-This repository provides a **Python CLI application** (built with [Typer](https://typer.tiangolo.com/)) for benchmarking persistent homology analysis software on various image datasets.
-The app allows you to:
-
-1. **Download datasets** (in `.h5` format) from Google Drive and export them as `.npy` files.
-2. **Install local software libraries** from the `libs/` folder.
-3. **Run automated tests** using a shell script that produces CSV files with evaluation metrics.
+The command-line interface is built using **Typer** and is the main entry point for running experiments.
 
 ---
 
 ## Installation
 
-Clone the repository and install the app in editable mode:
+Clone the repository and install it in editable mode:
 
 ```bash
-git clone https://github.com/<your-username>/PHBenchmark.git
-cd PHBenchmark
-pip install .
+git clone https://github.com/<your-org>/PTBenchmark.git
+cd PTBenchmark
+pip install -e .
 ```
 
-Now you can run the app using:
+Then install the required dependencies (including PixHomology):
 
 ```bash
-phbenchmark --help
+ptbenchmark install
 ```
 
 ---
 
-## Commands Overview
+## Command Line Interface (CLI)
 
-### 1. Download datasets
+The CLI exposes several commands to manage dependencies, download datasets, run benchmarks, and merge results.
 
-Download a predefined dataset and extract it into `.npy` images:
-
-```bash
-phbenchmark download-dataset <dataset_name>
-```
-
-Available datasets and their Google Drive sources:
-
-| Dataset      | Google Drive Link                                                                          |
-| ------------ | ------------------------------------------------------------------------------------------ |
-| **test**     | [link](https://drive.google.com/file/d/19GnE8Qw375kXTHmG_35GaXabvHVXSfUc/view?usp=sharing) |
-| **mnist**    | [link](https://drive.google.com/file/d/1pG1jzW8qNh5PRWT8kC4XT_udWQNSFLFo/view?usp=sharing) |
-| **cifar10**  | [link](https://drive.google.com/file/d/17lULKw6WX546SJxcTYl0qsLZLqyPO1Hk/view?usp=sharing) |
-| **imagenet** | [link](https://drive.google.com/file/d/1BNl5VivoFJpevkH7b0sYuVnN39d830T9/view?usp=sharing) |
-| **div2k**    | [link](https://drive.google.com/file/d/1XkeGHk9ObsDoChMSrunozZHyLeKGiJ5N/view?usp=sharing) |
-| **kather**   | [link](https://drive.google.com/file/d/1Enb3EHrumPNcPwEUoe8Eon8wXAynONBD/view?usp=sharing) |
-
-Each dataset is downloaded in `.h5` format (containing a dataset of images) and automatically extracted to `.npy` arrays in `datasets/<name>_npy/`.
-
-Example:
+Invoke the tool with:
 
 ```bash
-phbenchmark download-dataset mnist
+ptbenchmark --help
 ```
+
+### `install`
+
+Install all required Python dependencies and the PixHomology library.
+
+```bash
+ptbenchmark install
+```
+
+This command:
+
+* Installs PixHomology (locally if available, otherwise from pip)
+* Installs all required third-party libraries (NumPy, SciPy, PyTorch, Optuna, etc.)
 
 ---
 
-### 2. Install local software libraries
+### `download-dataset`
 
-Install one or all software packages from the local `libs/` directory:
-
-```bash
-phbenchmark install <software_name>
-# or
-phbenchmark install all
-```
-
-Predefined software packages:
-
-| Software     | Path                              |
-| ------------ | --------------------------------- |
-| **pixh**     | `libs/PixHomology/`               |
-| **cripser**  | `libs/CubicalRipser_3dim-0.0.21/` |
-| **gudhi**    | `libs/gudhi-devel/`               |
-| **ripserpy** | `libs/ripser.py/`                 |
-
-
-Example:
+Download one or more datasets from Google Drive in HDF5 format.
 
 ```bash
-phbenchmark install pixh
+ptbenchmark download-dataset [OPTIONS]
 ```
+
+**Options**
+
+* `--dataset`, `-d` *(str, default: ALL)*
+  Name of the dataset to download. Use `ALL` to download all available datasets.
+
+Downloaded files are saved in the `datasets/` directory as `.h5` files.
 
 ---
 
-### 3. Run software tests and compute statistics
+### Available Datasets
 
-Run tests on a dataset for a given method (software) and maximum dimension.
-The script `script.sh` (included in the repository) is executed automatically and produces a CSV file with results.
-
-```bash
-phbenchmark test <software_name> <dataset_name> <maxdim>
-```
-
-Example:
-
-```bash
-phbenchmark test pixh mnist 1
-```
-
-This command will:
-
-* Run the shell script that benchmarks the software,
-* Save the results to `results/<dataset>_<software>_<maxdim>_results.csv`,
-* Compute the **mean** and **standard deviation** for all metrics in the CSV.
-
+| Dataset       | Description                         | Download link                                                                                                                        |
+| ------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| CBSD68        | Color BSD68 image denoising dataset | [https://drive.google.com/uc?id=1g3fiKmOLNiyS68__724Ycb_sMkOhzPrd](https://drive.google.com/uc?id=1g3fiKmOLNiyS68__724Ycb_sMkOhzPrd) |
+| FMIDD_OH16230 | FMIDD dataset (OH16230)             | [https://drive.google.com/uc?id=1kOkdz6qv1N7o2QJmsM-syPy1QyzXsdsa](https://drive.google.com/uc?id=1kOkdz6qv1N7o2QJmsM-syPy1QyzXsdsa) |
+| FMIDD_PVD     | FMIDD dataset (PVD)                 | [https://drive.google.com/uc?id=1XjWLEaRlVb-HgaEBRz4wM3gKGM-VvB3d](https://drive.google.com/uc?id=1XjWLEaRlVb-HgaEBRz4wM3gKGM-VvB3d) |
+| FORECAST      | Forecasting dataset                 | [https://drive.google.com/uc?id=1pWlt_P6j5hp5YlLvp99yn94YhYuT345j](https://drive.google.com/uc?id=1pWlt_P6j5hp5YlLvp99yn94YhYuT345j) |
+| MRI           | MRI image dataset                   | [https://drive.google.com/uc?id=1QSRVk-vX8byBIJDaBuAUrtx1nZq67MIf](https://drive.google.com/uc?id=1QSRVk-vX8byBIJDaBuAUrtx1nZq67MIf) |
+| SEN2VENUS     | Sentinel-2 to VENµS dataset         | [https://drive.google.com/uc?id=1xN7F3rPyrOVzIqdXizjAmOaH9qfLoeR8](https://drive.google.com/uc?id=1xN7F3rPyrOVzIqdXizjAmOaH9qfLoeR8) |
+| SIDD          | Smartphone Image Denoising Dataset  | [https://drive.google.com/uc?id=1E3rZuH6vnmyXk_1IxyB_8IJWeXuwSu9U](https://drive.google.com/uc?id=1E3rZuH6vnmyXk_1IxyB_8IJWeXuwSu9U) |
 
 ---
 
-## Repository Structure
+### `test`
 
-```
-PHBenchmark/
-│
-├── phbenchmark/           # Main Python package
-│   ├── app.py             # CLI application (Typer)
-│   └── script.sh          # Script used for testing
-│
-├── datasets/              # Datasets (.h5 and .npy)
-├── results/               # Output CSV results
-├── libs/                  # Local software libraries
-│   ├── PixHomology/
-│   ├── CubicalRipser_3dim-0.0.21/
-│   ├── gudhi-devel/
-│   └── ripser.py/
-└── README.md
-```
-
----
-
-## Tested Software
-
-The repository includes and supports benchmarking of several persistent homology and cubical complex libraries:
-
-* [PixHomology](https://github.com/riccardoc95/PixHomology)
-* [CubicalRipser_3dim](https://github.com/shizuo-kaji/CubicalRipser_3dim)
-* [Gudhi](https://github.com/GUDHI/gudhi-devel)
-* [Ripser.py](https://github.com/scikit-tda/ripser.py)
-
-Each tool can be found under the `libs/` folder and is automatically installed in editable mode during setup.
-
----
-
-
-## Example Workflow
+Run benchmarking experiments on a selected dataset.
 
 ```bash
-# 1. Download a dataset
-phbenchmark download-dataset cifar10
-
-# 2. Install all local libraries
-phbenchmark install all
-
-# 3. Run a benchmark test
-phbenchmark test gudhi cifar10 1
+ptbenchmark test [OPTIONS]
 ```
+
+**Required options**
+
+* `--dataset`, `-d` *(str)*
+  Dataset name (one of the available datasets).
+
+**Optional options**
+
+* `--mode`, `-m` *(str, default: method)*
+  Test mode:
+
+  * `method`: supervised or unsupervised denoising methods
+  * `distance`: persistence tree distances (RD or RF)
+  * `entropy`: spatial entropy change
+
+* `--method` *(str, default: perstree)*
+  Method name when `--mode method` is selected. Can be any supervised or unsupervised method implemented in the framework.
+
+* `--distance` *(str, default: RD)*
+  Distance type for `--mode distance`. Supported values: `RD`, `RF`.
+
+* `--device` *(str, default: cpu)*
+  Device for supervised methods: `cpu` or `cuda`.
+
+* `--epochs` *(int, default: 20)*
+  Number of training epochs for supervised methods.
+
+* `--datasets-dir` *(str, default: datasets)*
+  Directory containing the downloaded datasets.
+
+* `--output` *(str, default: results/results.h5)*
+  Output HDF5 file where results are stored.
+
+---
+
+### `merge`
+
+Merge multiple HDF5 result files into a single file.
+
+```bash
+ptbenchmark merge --input-dir DIR [--output FILE]
+```
+
+**Options**
+
+* `--input-dir`, `-i` *(str, required)*
+  Directory containing HDF5 files to merge.
+
+* `--output`, `-o` *(str, default: results/results_all_merged.h5)*
+  Output merged HDF5 file.
+
+---
+
+## Intended Use
+
+PTBenchmark is intended for:
+
+* Reproducible benchmarking of persistence-tree–based methods
+* Comparison of distance measures and learning pipelines
+* Research in Topological Data Analysis (TDA)
+
+It is not optimized for production use.
+
+---
+
+## License and Citation
+
+Please refer to the repository for licensing details. If you use PTBenchmark in academic work, please cite the corresponding publication or software repository.
