@@ -56,7 +56,18 @@ def spatial_entropy_change(image_prev, image_curr, bins=256):
     return H_curr - H_prev
 
 
-def sec_perstree_anisodiff(img, gth, max_iter=100, stop_threshold=1e-4, lifetime_t=None, cut=True, cut_mode="nearest"):
+def sec_perstree_anisodiff(
+    img,
+    gth,
+    max_iter=100,
+    stop_threshold=1e-4,
+    lifetime_t=None,
+    cut=True,
+    cut_mode="nearest",
+    base_relax_scale=1e-5,
+    guided_radius=1,
+    epsilon_scale=5e-4,
+):
     tree = PersTree(img, lifetime_t=lifetime_t, cut=cut, cut_mode=cut_mode)
     values = tree.features[:, 1].copy()
     lifetimes = tree.features[:, -1].copy()
@@ -72,7 +83,18 @@ def sec_perstree_anisodiff(img, gth, max_iter=100, stop_threshold=1e-4, lifetime
 
     for t in range(max_iter):
         t0 = time.time()
-        rec = lifetime_denoise_tree(values, lifetimes, parents, child_index, children_all, rows, cols)
+        rec = lifetime_denoise_tree(
+            values,
+            lifetimes,
+            parents,
+            child_index,
+            children_all,
+            rows,
+            cols,
+            base_relax_scale=base_relax_scale,
+            guided_radius=guided_radius,
+            epsilon_scale=epsilon_scale,
+        )
         exec_time = time.time() - t0
         delta_H = spatial_entropy_change(prev_img, rec)
         entropy_changes.append(delta_H)
@@ -83,14 +105,51 @@ def sec_perstree_anisodiff(img, gth, max_iter=100, stop_threshold=1e-4, lifetime
             best_u = rec.copy()
             best_time = exec_time
             best_mse = np.mean((gth - best_u)**2)
-            return best_u, best_mse, {"niter": t, "lifetime_t": lifetime_t, "time": best_time}
+            return best_u, best_mse, {
+                "niter": t,
+                "lifetime_t": lifetime_t,
+                "time": best_time,
+                "stop_threshold": stop_threshold,
+                "stop_reason": "entropy_sign_change",
+                "base_relax_scale": base_relax_scale,
+                "guided_radius": guided_radius,
+                "epsilon_scale": epsilon_scale,
+                "cut": cut,
+                "cut_mode": cut_mode,
+            }
         if abs(delta_H) < stop_threshold:
             best_u = rec.copy()
             best_time = exec_time
             best_mse = np.mean((gth - best_u) ** 2)
-            return best_u, best_mse, {"niter": t, "lifetime_t": lifetime_t, "time": best_time}
+            return best_u, best_mse, {
+                "niter": t,
+                "lifetime_t": lifetime_t,
+                "time": best_time,
+                "stop_threshold": stop_threshold,
+                "stop_reason": "entropy_threshold",
+                "base_relax_scale": base_relax_scale,
+                "guided_radius": guided_radius,
+                "epsilon_scale": epsilon_scale,
+                "cut": cut,
+                "cut_mode": cut_mode,
+            }
 
         prev_img = rec.copy()
         values = rec.flatten()
 
+    best_u = rec.copy()
+    best_time = exec_time
+    best_mse = np.mean((gth - best_u) ** 2)
+    return best_u, best_mse, {
+        "niter": max_iter,
+        "lifetime_t": lifetime_t,
+        "time": best_time,
+        "stop_threshold": stop_threshold,
+        "stop_reason": "max_iter",
+        "base_relax_scale": base_relax_scale,
+        "guided_radius": guided_radius,
+        "epsilon_scale": epsilon_scale,
+        "cut": cut,
+        "cut_mode": cut_mode,
+    }
 

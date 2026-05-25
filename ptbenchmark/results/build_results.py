@@ -19,7 +19,8 @@ os.makedirs(OUTPUT_IMG_DIR, exist_ok=True)
 # === Parametri globali ===
 methods = [
     "perstree", "perstree_cut", "perstree_rec_sec", "peronamalik", "median",
-    "gaussian", "wavelet", "nlmeans", "bm3d", "unet", "dncnn"
+    "gaussian", "wavelet", "nlmeans", "bm3d", "unet", "dncnn",
+    "nafnet", "hirdiff", "restormer"
 ]
 zscaler = ZScaleInterval()
 

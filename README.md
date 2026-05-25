@@ -146,6 +146,29 @@ ptbenchmark merge --input-dir DIR [--output FILE]
 * `--output`, `-o` *(str, default: results/results_all_merged.h5)*
   Output merged HDF5 file.
 
+### `sensitivity`
+
+Run a parameter sensitivity sweep for the PT denoising method or the entropy
+stopping variant:
+
+```bash
+ptbenchmark sensitivity --dataset CBSD68 --method perstree
+ptbenchmark sensitivity --dataset CBSD68 --method entropy
+```
+
+The sweep varies the base relaxation scale, guided-filter radius, epsilon
+scale, and, for entropy stopping, the stopping threshold. Per-image metrics are
+saved to CSV and HDF5.
+
+To compare oracle MSE stopping (`perstree`) against entropy stopping
+(`perstree_rec_sec`) after merging benchmark outputs:
+
+```bash
+python -m ptbenchmark.results.analyze_oracle_vs_entropy \
+  --input results/results_all_merged.h5 \
+  --output-dir paper/analysis
+```
+
 ---
 
 ## Intended Use

@@ -1,13 +1,24 @@
 from .perstrees import PersTree
 
 import numpy as np
-from scipy.ndimage import uniform_filter, gaussian_filter
+from scipy.ndimage import uniform_filter
 
 import time
 
 
-def lifetime_denoise_tree(values, lifetimes, parents, child_index, children_all, rows, cols,
-                          num_iter=1):
+def lifetime_denoise_tree(
+    values,
+    lifetimes,
+    parents,
+    child_index,
+    children_all,
+    rows,
+    cols,
+    num_iter=1,
+    base_relax_scale=1e-5,
+    guided_radius=1,
+    epsilon_scale=5e-4,
+):
 
     v = values.copy().astype(float)
     n = len(v)
@@ -16,7 +27,7 @@ def lifetime_denoise_tree(values, lifetimes, parents, child_index, children_all,
     col_coords = np.arange(n) % cols
 
     L = (lifetimes - lifetimes.min()) / (lifetimes.max() - lifetimes.min() + 1e-12)
-    base_relax = 1e-05 * (1.0 - L)
+    base_relax = base_relax_scale * (1.0 - L)
 
     for iteration in range(num_iter):
         v_2d = v.reshape(rows, cols)
@@ -73,8 +84,8 @@ def lifetime_denoise_tree(values, lifetimes, parents, child_index, children_all,
                 v[i] = (1 - relax_td) * v[i] + relax_td * v[p]
 
         v_2d = v.reshape(rows, cols)
-        radius = 1#max(2, 4 - iteration // 3)  
-        epsilon = 0.0005 * (1 + grad_strength.reshape(rows, cols)).mean()  
+        radius = guided_radius
+        epsilon = epsilon_scale * (1 + grad_strength.reshape(rows, cols)).mean()
         #v_2d_smooth = guided_filter_simple(v_2d, v_2d, radius, epsilon)
 
         rows, cols = v_2d.shape    
@@ -98,7 +109,17 @@ def lifetime_denoise_tree(values, lifetimes, parents, child_index, children_all,
     return v.reshape(rows, cols)
 
 
-def perstree_anisodiff(img, gth, max_iter=100, lifetime_t=None, cut=False, cut_mode="nearest"):
+def perstree_anisodiff(
+    img,
+    gth,
+    max_iter=100,
+    lifetime_t=None,
+    cut=False,
+    cut_mode="nearest",
+    base_relax_scale=1e-5,
+    guided_radius=1,
+    epsilon_scale=5e-4,
+):
     tree = PersTree(img, lifetime_t=lifetime_t, cut=cut, cut_mode=cut_mode)
     labels = tree.features[:,0].astype(int).copy()
     values = tree.features[:,1].copy()
@@ -116,7 +137,18 @@ def perstree_anisodiff(img, gth, max_iter=100, lifetime_t=None, cut=False, cut_m
     
     for i in range(max_iter):
         t0 = time.time()
-        rec = lifetime_denoise_tree(values, lifetimes, parents, child_index, children_all, rows, cols)
+        rec = lifetime_denoise_tree(
+            values,
+            lifetimes,
+            parents,
+            child_index,
+            children_all,
+            rows,
+            cols,
+            base_relax_scale=base_relax_scale,
+            guided_radius=guided_radius,
+            epsilon_scale=epsilon_scale,
+        )
         exec_time = time.time() - t0
         mse = np.mean((gth - rec)**2)
         if mse < best_mse:
@@ -126,6 +158,15 @@ def perstree_anisodiff(img, gth, max_iter=100, lifetime_t=None, cut=False, cut_m
             best_time = exec_time
         else:
             break
-    return best_u, best_mse, {"niter":i, "lifetime_t":lifetime_t, "time": best_time}
+    return best_u, best_mse, {
+        "niter": i,
+        "lifetime_t": lifetime_t,
+        "time": best_time,
+        "base_relax_scale": base_relax_scale,
+        "guided_radius": guided_radius,
+        "epsilon_scale": epsilon_scale,
+        "cut": cut,
+        "cut_mode": cut_mode,
+    }
 
     

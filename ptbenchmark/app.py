@@ -4,10 +4,12 @@ import subprocess
 import h5py
 import gdown
 from pathlib import Path
+from typing import Optional
 
 from ptbenchmark.tests.test_method import test_method, supervised_methods, unsupervised_methods
 from ptbenchmark.tests.test_distance import test_pt_distance
 from ptbenchmark.tests.test_sec import test_sec
+from ptbenchmark.tests.test_sensitivity import run_sensitivity
 from ptbenchmark.utils import merge_h5_files
 
 app = typer.Typer()
@@ -167,6 +169,86 @@ def merge(
     ),
 ):
     merge_h5_files(input_dir, output_file)
+
+
+@app.command()
+def sensitivity(
+    dataset: str = typer.Option(
+        ...,
+        "--dataset",
+        "-d",
+        help=f"Dataset name. Available: {', '.join(DATASETS.keys())}",
+    ),
+    method: str = typer.Option(
+        "perstree",
+        "--method",
+        help="Sensitivity target: perstree or entropy.",
+    ),
+    base_relax_scales: str = typer.Option(
+        "1e-6,1e-5,1e-4",
+        "--base-relax-scales",
+        help="Comma-separated base relaxation values.",
+    ),
+    guided_radii: str = typer.Option(
+        "1,2,3",
+        "--guided-radii",
+        help="Comma-separated guided-filter radii.",
+    ),
+    epsilon_scales: str = typer.Option(
+        "1e-4,5e-4,1e-3",
+        "--epsilon-scales",
+        help="Comma-separated guided-filter epsilon scales.",
+    ),
+    stop_thresholds: str = typer.Option(
+        "1e-5,1e-4,1e-3",
+        "--stop-thresholds",
+        help="Comma-separated entropy stop thresholds. Used only with --method entropy.",
+    ),
+    max_iter: int = typer.Option(
+        100,
+        "--max-iter",
+        help="Maximum denoising iterations.",
+    ),
+    max_images: Optional[int] = typer.Option(
+        None,
+        "--max-images",
+        help="Optional cap per subset for fast pilot runs.",
+    ),
+    datasets_dir: str = typer.Option(
+        "datasets",
+        "--datasets-dir",
+        help="Input dataset directory.",
+    ),
+    output_file: str = typer.Option(
+        "results/sensitivity.h5",
+        "--output",
+        help="Output .h5 file for sensitivity results.",
+    ),
+    csv_file: str = typer.Option(
+        "results/sensitivity.csv",
+        "--csv",
+        help="Output CSV file for per-image sensitivity metrics.",
+    ),
+):
+    if dataset not in DATASETS:
+        typer.echo(f"Dataset '{dataset}' not found. Available: {list(DATASETS.keys())}")
+        raise typer.Exit(code=1)
+
+    typer.echo(f"Running sensitivity for dataset={dataset}, method={method}")
+    run_sensitivity(
+        dataset_name=dataset,
+        datasets_dir=datasets_dir,
+        output_file=output_file,
+        csv_file=csv_file,
+        method=method,
+        base_relax_scales=base_relax_scales,
+        guided_radii=guided_radii,
+        epsilon_scales=epsilon_scales,
+        stop_thresholds=stop_thresholds,
+        max_iter=max_iter,
+        max_images=max_images,
+    )
+    typer.echo("Sensitivity completed.")
 
 if __name__ == "__main__":
     app()

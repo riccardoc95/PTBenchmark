@@ -14,7 +14,8 @@ os.makedirs("paper", exist_ok=True)
 
 methods = [
     "perstree", "perstree_cut", "perstree_rec_sec", "peronamalik", "median",
-    "gaussian", "wavelet", "nlmeans", "bm3d", "unet", "dncnn"
+    "gaussian", "wavelet", "nlmeans", "bm3d", "unet", "dncnn",
+    "nafnet", "hirdiff", "restormer"
 ]
 
 methods_order = [
@@ -27,7 +28,10 @@ methods_order = [
                 "nlmeans",          # Non-Local Means
                 "bm3d",             # BM3D
                 "unet",             # U-Net (deep learning)
-                "dncnn"             # DnCNN (deep learning)
+                "dncnn",            # DnCNN (deep learning)
+                "nafnet",           # NAFNet (deep learning)
+                "hirdiff",          # HIR-Diff (deep learning)
+                "restormer"         # Restormer (deep learning)
             ]
 
 def bold(s): return f"\\textbf{{{s}}}"
@@ -61,6 +65,9 @@ def generate_tables_tex(results, output_path):
         "bm3d": "BM3D",
         "unet": "U-Net",
         "dncnn": "DnCNN",
+        "nafnet": "NAFNet",
+        "hirdiff": "HIR-Diff",
+        "restormer": "Restormer",
     }
 
     shades_by_rank = {0: "[gray]{0.90}", 1: "[gray]{0.93}", 2: "[gray]{0.96}"}
