@@ -1,11 +1,8 @@
 # Reviewer Experiments
 
-This file lists only the new commands needed for the reviewer response, assuming
-the older benchmark jobs have already been run.
+This file lists only the new commands needed for the reviewer response, assuming the older benchmark jobs have already been run.
 
 ## 1. Update The HPC Checkout
-
-From the repository root on the HPC:
 
 ```bash
 cd ~/PTBenchmark
@@ -14,16 +11,7 @@ git submodule update --init --recursive
 conda run -n ptbenchmark pip install -e .
 ```
 
-Check that the editable install points to the repository, not to a copied
-`site-packages` version:
-
-```bash
-conda run -n ptbenchmark python -c "import ptbenchmark; print(ptbenchmark.__file__)"
-```
-
-The printed path should start with `~/PTBenchmark/ptbenchmark`.
-
-## 2. Launch Only The Missing Reviewer Jobs
+## 2. Launch The Requests Jobs
 
 Run all new jobs:
 
@@ -151,19 +139,3 @@ EPSILON_SCALES=1e-4,5e-4 \
 STOP_THRESHOLDS=1e-5,1e-4 \
 bash sbatch/submit_missing_reviewer_jobs.sh
 ```
-
-## 7. Reviewer Mapping
-
-Use the generated outputs as follows:
-
-- Recent deep learning baselines: standard merged HDF5, tables including
-  `nafnet`, `hirdiff`, `restormer`.
-- Entropy stopping robustness: `oracle_vs_entropy_summary.csv`.
-- First-significant-change criterion: report actual `stop_reason` and `niter`
-  from entropy results.
-- Filter usefulness: compare `perstree` vs `perstree_cut` in standard tables,
-  plus RD/RF distance tables.
-- Hyperparameter defaults: use sensitivity CSV files to show stability across
-  the parameter grid.
-- Runtime claims: standard runtime tables, now including the new supervised
-  methods.
