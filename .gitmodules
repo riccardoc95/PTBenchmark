@@ -1,0 +1,9 @@
+[submodule "external/supervised/NAFNet"]
+	path = external/supervised/NAFNet
+	url = https://github.com/megvii-research/NAFNet.git
+[submodule "external/supervised/HIRDiff"]
+	path = external/supervised/HIRDiff
+	url = https://github.com/LiPang/HIRDiff.git
+[submodule "external/supervised/Restormer"]
+	path = external/supervised/Restormer
+	url = https://github.com/swz30/Restormer.git

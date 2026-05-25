@@ -22,6 +22,13 @@ Then install the required dependencies (including PixHomology):
 ptbenchmark install
 ```
 
+Initialize the linked supervised-method repositories before using NAFNet,
+HIRDiff, or Restormer:
+
+```bash
+git submodule update --init --recursive
+```
+
 ---
 
 ## Command Line Interface (CLI)
@@ -104,6 +111,7 @@ ptbenchmark test [OPTIONS]
 
 * `--method` *(str, default: perstree)*
   Method name when `--mode method` is selected. Can be any supervised or unsupervised method implemented in the framework.
+  Supervised methods include `unet`, `dncnn`, `nafnet`, `hirdiff`, and `restormer`.
 
 * `--distance` *(str, default: RD)*
   Distance type for `--mode distance`. Supported values: `RD`, `RF`.

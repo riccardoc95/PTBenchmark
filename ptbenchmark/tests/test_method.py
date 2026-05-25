@@ -1,6 +1,6 @@
+import json
 import os
 import time
-import json
 from functools import partial
 
 import h5py
@@ -8,34 +8,47 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from tqdm import tqdm
-from torchvision import transforms
-from torch.utils.data import DataLoader, random_split
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
+from torch.utils.data import DataLoader, random_split
+from torchvision import transforms
+from tqdm import tqdm
 
 from ptbenchmark.src import (
-    Dataset, CropDataset,
-    DnCNN, UNet, train_one_epoch, validate,
-    pt_denoise, pm_denoise, median_denoise, gaussian_denoise,
-    wavelet_denoise, nl_means_denoise, bm3d_denoise
+    CropDataset,
+    Dataset,
+    DnCNN,
+    UNet,
+    bm3d_denoise,
+    build_external_supervised_model,
+    gaussian_denoise,
+    median_denoise,
+    nl_means_denoise,
+    pm_denoise,
+    pt_denoise,
+    train_one_epoch,
+    validate,
+    wavelet_denoise,
 )
 
 supervised_methods = {
-    "unet": UNet(n_channels=1, n_classes=1),
-    "dncnn":DnCNN(channels=1),
+    "unet": lambda: UNet(n_channels=1, n_classes=1),
+    "dncnn": lambda: DnCNN(channels=1),
+    "nafnet": lambda: build_external_supervised_model("nafnet"),
+    "hirdiff": lambda: build_external_supervised_model("hirdiff"),
+    "restormer": lambda: build_external_supervised_model("restormer"),
 }
 
 unsupervised_methods = {
-            "perstree": partial(pt_denoise, cut=False),
-            "perstree_cut": partial(pt_denoise, cut=True),
-            "peronamalik": pm_denoise,
-            "median": median_denoise,
-            "gaussian": gaussian_denoise,
-            "wavelet": wavelet_denoise,
-            "nlmeans": nl_means_denoise,
-            "bm3d": bm3d_denoise,
-        }
+    "perstree": partial(pt_denoise, cut=False),
+    "perstree_cut": partial(pt_denoise, cut=True),
+    "peronamalik": pm_denoise,
+    "median": median_denoise,
+    "gaussian": gaussian_denoise,
+    "wavelet": wavelet_denoise,
+    "nlmeans": nl_means_denoise,
+    "bm3d": bm3d_denoise,
+}
 
 
 def save_to_h5(output_file, dataset_name, subset, image_name, method_name, data_dict):
@@ -68,11 +81,19 @@ def save_metrics_summary(output_file, dataset_name, subset, method_name, metrics
             stats_group.attrs[k] = float(v)
 
 
-def test_method(method_name, dataset_name, datasets_dir, output_file, device="cpu", n_epochs=20, batch_size=8):
+def test_method(
+    method_name,
+    dataset_name,
+    datasets_dir,
+    output_file,
+    device="cpu",
+    n_epochs=20,
+    batch_size=8,
+):
     dataset = Dataset(datasets_dir, dataset_name, return_image_name=True)
     device = torch.device(device)
 
-    if method_name.lower() in ["unet", "dncnn"]:
+    if method_name.lower() in supervised_methods:
         for subset in dataset.get_subsets():
             dataset.set_subset(subset)
 
@@ -91,11 +112,15 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
             train_dataset = CropDataset(train_dataset, target_size, transform)
             valid_dataset = CropDataset(valid_dataset, target_size, transform)
 
-            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-            valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
+            train_loader = DataLoader(
+                train_dataset, batch_size=batch_size, shuffle=True
+            )
+            valid_loader = DataLoader(
+                valid_dataset, batch_size=batch_size, shuffle=False
+            )
 
             # Modello
-            model = supervised_methods[method_name.lower()]
+            model = supervised_methods[method_name.lower()]()
             model = model.to(device)
             criterion = nn.MSELoss()
             optimizer = optim.Adam(model.parameters(), lr=1e-3)
@@ -103,9 +128,15 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
             # Training
             start_train = time.time()
             for epoch in range(n_epochs):
-                train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device)
-                val_loss, val_psnr, val_ssim = validate(model, valid_loader, criterion, device)
-                print(f"[{method_name}] Epoch {epoch+1}/{n_epochs} | Train {train_loss:.4f} | Val {val_loss:.4f} | PSNR {val_psnr:.2f}")
+                train_loss = train_one_epoch(
+                    model, train_loader, criterion, optimizer, device
+                )
+                val_loss, val_psnr, val_ssim = validate(
+                    model, valid_loader, criterion, device
+                )
+                print(
+                    f"[{method_name}] Epoch {epoch + 1}/{n_epochs} | Train {train_loss:.4f} | Val {val_loss:.4f} | PSNR {val_psnr:.2f}"
+                )
             training_time = time.time() - start_train
 
             all_mse, all_psnr, all_ssim = [], [], []
@@ -113,7 +144,9 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
 
             model.eval()
             with torch.no_grad():
-                for image_names, inputs, targets in tqdm(valid_loader, desc=f"{dataset_name}/{subset}"):
+                for image_names, inputs, targets in tqdm(
+                    valid_loader, desc=f"{dataset_name}/{subset}"
+                ):
                     inputs = inputs.to(device)
                     targets = targets.to(device)
                     t0 = time.time()
@@ -127,8 +160,12 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                         rec = outputs_np[i]
                         gth = targets_np[i]
                         mse = float(((rec - gth) ** 2).mean())
-                        psnr_val = float(psnr(gth, rec, data_range=gth.max() - gth.min()))
-                        ssim_val = float(ssim(gth, rec, data_range=gth.max() - gth.min()))
+                        psnr_val = float(
+                            psnr(gth, rec, data_range=gth.max() - gth.min())
+                        )
+                        ssim_val = float(
+                            ssim(gth, rec, data_range=gth.max() - gth.min())
+                        )
                         all_mse.append(mse)
                         all_psnr.append(psnr_val)
                         all_ssim.append(ssim_val)
@@ -166,14 +203,26 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                 "var_training_time": np.var(all_training_time),
             }
 
-            save_metrics_summary(output_file, dataset_name, subset, method_name, metrics)
+            save_metrics_summary(
+                output_file, dataset_name, subset, method_name, metrics
+            )
 
-            print(f"\nStatistiche globali per subset '{subset}' ({method_name}):")
-            print(f"   MSE  mean={metrics['mean_mse']:.6f}, var={metrics['var_mse']:.6f}")
-            print(f"   PSNR mean={metrics['mean_psnr']:.3f}, var={metrics['var_psnr']:.3f}")
-            print(f"   SSIM mean={metrics['mean_ssim']:.3f}, var={metrics['var_ssim']:.3f}\n")
-            print(f"   TIME mean={metrics['mean_time']:.4f}s, var={metrics['var_time']:.4f}")
-            print(f"   TRAIN mean={metrics['mean_training_time']:.4f}s, var={metrics['var_training_time']:.4f}\n")
+            print(f"\Global statistics per subset '{subset}' ({method_name}):")
+            print(
+                f"   MSE  mean={metrics['mean_mse']:.6f}, var={metrics['var_mse']:.6f}"
+            )
+            print(
+                f"   PSNR mean={metrics['mean_psnr']:.3f}, var={metrics['var_psnr']:.3f}"
+            )
+            print(
+                f"   SSIM mean={metrics['mean_ssim']:.3f}, var={metrics['var_ssim']:.3f}\n"
+            )
+            print(
+                f"   TIME mean={metrics['mean_time']:.4f}s, var={metrics['var_time']:.4f}"
+            )
+            print(
+                f"   TRAIN mean={metrics['mean_training_time']:.4f}s, var={metrics['var_training_time']:.4f}\n"
+            )
 
     else:
         if method_name.lower() not in unsupervised_methods:
@@ -197,7 +246,7 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                 all_mse.append(mse)
                 all_psnr.append(psnr_val)
                 all_ssim.append(ssim_val)
-                all_time.append(params['time'])
+                all_time.append(params["time"])
                 all_training_time.append(elapsed)
 
                 save_to_h5(
@@ -213,9 +262,9 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                         "ssim": ssim_val,
                         "params": params,
                         "training_time": elapsed,
-                        "time": params['time']},
+                        "time": params["time"],
+                    },
                 )
-
 
             # Statistiche globali
             metrics = {
@@ -231,16 +280,26 @@ def test_method(method_name, dataset_name, datasets_dir, output_file, device="cp
                 "var_training_time": np.var(all_training_time),
             }
 
-            save_metrics_summary(output_file, dataset_name, subset, method_name, metrics)
+            save_metrics_summary(
+                output_file, dataset_name, subset, method_name, metrics
+            )
 
-            print(f"\nStatistiche globali per subset '{subset}' ({method_name}):")
-            print(f"   MSE  mean={metrics['mean_mse']:.6f}, var={metrics['var_mse']:.6f}")
-            print(f"   PSNR mean={metrics['mean_psnr']:.3f}, var={metrics['var_psnr']:.3f}")
-            print(f"   SSIM mean={metrics['mean_ssim']:.3f}, var={metrics['var_ssim']:.3f}\n")
-            print(f"   TIME mean={metrics['mean_time']:.4f}s, var={metrics['var_time']:.4f}")
-            print(f"   TRAIN mean={metrics['mean_training_time']:.4f}s, var={metrics['var_training_time']:.4f}\n")
-
-
+            print(f"\Global statistics per subset '{subset}' ({method_name}):")
+            print(
+                f"   MSE  mean={metrics['mean_mse']:.6f}, var={metrics['var_mse']:.6f}"
+            )
+            print(
+                f"   PSNR mean={metrics['mean_psnr']:.3f}, var={metrics['var_psnr']:.3f}"
+            )
+            print(
+                f"   SSIM mean={metrics['mean_ssim']:.3f}, var={metrics['var_ssim']:.3f}\n"
+            )
+            print(
+                f"   TIME mean={metrics['mean_time']:.4f}s, var={metrics['var_time']:.4f}"
+            )
+            print(
+                f"   TRAIN mean={metrics['mean_training_time']:.4f}s, var={metrics['var_training_time']:.4f}\n"
+            )
 
 
 if __name__ == "__main__":

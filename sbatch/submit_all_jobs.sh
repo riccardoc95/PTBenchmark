@@ -2,13 +2,21 @@
 set -e
 
 DATASETS=(CBSD68 SEN2VENUS FMIDD_OH16230 FMIDD_PVD SIDD FORECAST MRI)
-SUPERVISED=(unet dncnn)
+SUPERVISED=(unet dncnn nafnet hirdiff restormer)
 UNSUPERVISED=(perstree perstree_cut peronamalik bm3d nlmeans gaussian median wavelet)
 DISTANCES=(RD RF)
 
 DATASET_DIR="$HOME/projects/PTBenchmark/datasets"
 
 mkdir -p logs results_partial
+
+for SUBMODULE in external/supervised/NAFNet external/supervised/HIRDiff external/supervised/Restormer; do
+  if [ ! -d "$SUBMODULE/.git" ]; then
+    echo "Missing submodule: $SUBMODULE"
+    echo "Run: git submodule update --init --recursive"
+    exit 1
+  fi
+done
 
 # === SUPERVISED ===
 for DS in "${DATASETS[@]}"; do

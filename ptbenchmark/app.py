@@ -39,7 +39,7 @@ def install():
         typer.echo("PixHomology installed successfully.")
 
     for library in ["numpy", "scipy", "h5py", "gdown", "torch", "astropy",
-                    "torchvision", "scikit-image", "bm3d", "optuna"]:
+                    "torchvision", "scikit-image", "bm3d", "optuna", "einops"]:
         typer.echo(f"Installing {library} from pip...")
         subprocess.run(["pip", "install", library], check=True)
         typer.echo(f"{library} installed successfully.")
