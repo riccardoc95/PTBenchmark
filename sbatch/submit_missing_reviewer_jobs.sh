@@ -18,6 +18,26 @@ EPSILON_SCALES="${EPSILON_SCALES:-1e-4,5e-4,1e-3}"
 STOP_THRESHOLDS="${STOP_THRESHOLDS:-1e-5,1e-4,1e-3}"
 MAX_IMAGES="${MAX_IMAGES:-}"
 
+reviewer_include_images() {
+  case "$1" in
+    CBSD68)
+      echo "0000,0010"
+      ;;
+    FMIDD_OH16230)
+      echo "img_9"
+      ;;
+    FORECAST)
+      echo "patch_61_x13500_y15500"
+      ;;
+    MRI)
+      echo "000014"
+      ;;
+    *)
+      echo ""
+      ;;
+  esac
+}
+
 CURRENT_BATCH_IDS=()
 PREVIOUS_BATCH_IDS=()
 
@@ -81,6 +101,12 @@ make_template_job() {
 
 if [ "$RUN_NEW_SUPERVISED" = "1" ]; then
   for DS in "${DATASETS[@]}"; do
+    INCLUDE_IMAGES="$(reviewer_include_images "$DS")"
+    INCLUDE_IMAGES_ARG=""
+    if [ -n "$INCLUDE_IMAGES" ]; then
+      INCLUDE_IMAGES_ARG=" --include-images ${INCLUDE_IMAGES}"
+    fi
+
     for M in "${NEW_SUPERVISED[@]}"; do
       JOB="job_${DS}_${M}.sbatch"
       make_template_job \
@@ -88,7 +114,7 @@ if [ "$RUN_NEW_SUPERVISED" = "1" ]; then
         "$DS" \
         "method" \
         "$M" \
-        "--method ${M} --epochs 20 --device cpu --datasets-dir ${DATASET_DIR}" \
+        "--method ${M} --epochs 20 --device cpu --datasets-dir ${DATASET_DIR}${INCLUDE_IMAGES_ARG}" \
         "${DS}_${M}" \
         "16" \
         "64G" \

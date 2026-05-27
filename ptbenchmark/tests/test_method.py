@@ -89,9 +89,11 @@ def test_method(
     device="cpu",
     n_epochs=20,
     batch_size=8,
+    include_images=None,
 ):
     dataset = Dataset(datasets_dir, dataset_name, return_image_name=True)
     device = torch.device(device)
+    include_images = set(include_images or [])
 
     if method_name.lower() in supervised_methods:
         for subset in dataset.get_subsets():
@@ -141,53 +143,85 @@ def test_method(
 
             all_mse, all_psnr, all_ssim = [], [], []
             all_time, all_training_time = [], []
+            saved_images = set()
 
             model.eval()
-            with torch.no_grad():
-                for image_names, inputs, targets in tqdm(
-                    valid_loader, desc=f"{dataset_name}/{subset}"
-                ):
-                    inputs = inputs.to(device)
-                    targets = targets.to(device)
-                    t0 = time.time()
-                    outputs = model(inputs)
-                    elapsed = time.time() - t0
 
-                    outputs_np = outputs.squeeze(1).cpu().numpy()
-                    targets_np = targets.squeeze(1).cpu().numpy()
+            def evaluate_and_save(loader, desc, add_to_summary=True):
+                with torch.no_grad():
+                    for image_names, inputs, targets in tqdm(loader, desc=desc):
+                        inputs = inputs.to(device)
+                        targets = targets.to(device)
+                        t0 = time.time()
+                        outputs = model(inputs)
+                        elapsed = time.time() - t0
 
-                    for i, img_name in enumerate(image_names):
-                        rec = outputs_np[i]
-                        gth = targets_np[i]
-                        mse = float(((rec - gth) ** 2).mean())
-                        psnr_val = float(
-                            psnr(gth, rec, data_range=gth.max() - gth.min())
-                        )
-                        ssim_val = float(
-                            ssim(gth, rec, data_range=gth.max() - gth.min())
-                        )
-                        all_mse.append(mse)
-                        all_psnr.append(psnr_val)
-                        all_ssim.append(ssim_val)
-                        all_time.append(elapsed)
-                        all_training_time.append(training_time)
+                        outputs_np = outputs.squeeze(1).cpu().numpy()
+                        targets_np = targets.squeeze(1).cpu().numpy()
 
-                        save_to_h5(
-                            output_file,
-                            dataset_name,
-                            subset,
-                            img_name,
-                            method_name,
-                            {
-                                "rec": rec,
-                                "mse": mse,
-                                "psnr": psnr_val,
-                                "ssim": ssim_val,
-                                "params": {"epochs": n_epochs},
-                                "training_time": training_time,
-                                "time": elapsed,
-                            },
-                        )
+                        for i, img_name in enumerate(image_names):
+                            rec = outputs_np[i]
+                            gth = targets_np[i]
+                            mse = float(((rec - gth) ** 2).mean())
+                            psnr_val = float(
+                                psnr(gth, rec, data_range=gth.max() - gth.min())
+                            )
+                            ssim_val = float(
+                                ssim(gth, rec, data_range=gth.max() - gth.min())
+                            )
+                            if add_to_summary:
+                                all_mse.append(mse)
+                                all_psnr.append(psnr_val)
+                                all_ssim.append(ssim_val)
+                                all_time.append(elapsed)
+                                all_training_time.append(training_time)
+
+                            saved_images.add(img_name)
+                            save_to_h5(
+                                output_file,
+                                dataset_name,
+                                subset,
+                                img_name,
+                                method_name,
+                                {
+                                    "rec": rec,
+                                    "mse": mse,
+                                    "psnr": psnr_val,
+                                    "ssim": ssim_val,
+                                    "params": {"epochs": n_epochs},
+                                    "training_time": training_time,
+                                    "time": elapsed,
+                                },
+                            )
+
+            evaluate_and_save(valid_loader, f"{dataset_name}/{subset}")
+
+            missing_include_images = include_images - saved_images
+            if missing_include_images:
+                labels = dataset.get_labels()
+                include_indices = [
+                    i for i, label in enumerate(labels) if label in missing_include_images
+                ]
+                unknown_images = sorted(missing_include_images - set(labels))
+                if unknown_images:
+                    print(
+                        f"Warning: requested images not found in {dataset_name}: "
+                        f"{', '.join(unknown_images)}"
+                    )
+                if include_indices:
+                    include_dataset = CropDataset(
+                        torch.utils.data.Subset(dataset, include_indices),
+                        target_size,
+                        transform,
+                    )
+                    include_loader = DataLoader(
+                        include_dataset, batch_size=batch_size, shuffle=False
+                    )
+                    evaluate_and_save(
+                        include_loader,
+                        f"{dataset_name}/{subset}/included",
+                        add_to_summary=False,
+                    )
 
             # Metriche globali
             metrics = {

@@ -126,6 +126,11 @@ def test(
         "results/results.h5",
         "--output",
         help="Output .h5 file for results.",
+    ),
+    include_images: Optional[str] = typer.Option(
+        None,
+        "--include-images",
+        help="Comma-separated image labels to always evaluate and save for supervised methods.",
     )
 ):
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -136,7 +141,20 @@ def test(
 
     if mode == "method":
         typer.echo(f"Running denoising method: {method}")
-        test_method(method, dataset, datasets_dir, output_file, device=device, n_epochs=n_epochs)
+        forced_images = (
+            [name.strip() for name in include_images.split(",") if name.strip()]
+            if include_images
+            else None
+        )
+        test_method(
+            method,
+            dataset,
+            datasets_dir,
+            output_file,
+            device=device,
+            n_epochs=n_epochs,
+            include_images=forced_images,
+        )
 
     elif mode == "distance":
         typer.echo(f"Running persistence distance: {distance}")
