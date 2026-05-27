@@ -9,8 +9,8 @@ DATASET_DIR="${DATASET_DIR:-$HOME/projects/PTBenchmark/datasets}"
 BATCH_SIZE="${BATCH_SIZE:-10}"
 
 RUN_NEW_SUPERVISED="${RUN_NEW_SUPERVISED:-1}"
-RUN_ENTROPY="${RUN_ENTROPY:-1}"
-RUN_SENSITIVITY="${RUN_SENSITIVITY:-1}"
+RUN_ENTROPY="${RUN_ENTROPY:-0}"
+RUN_SENSITIVITY="${RUN_SENSITIVITY:-0}"
 
 BASE_RELAX_SCALES="${BASE_RELAX_SCALES:-1e-6,1e-5,1e-4}"
 GUIDED_RADII="${GUIDED_RADII:-1,2,3}"
@@ -162,7 +162,7 @@ if [ "$RUN_SENSITIVITY" = "1" ]; then
 
 cd "$REPO_DIR"
 
-micromamba run -n ptbenchmark ptbenchmark sensitivity \\
+conda run -n ptbenchmark ptbenchmark sensitivity \\
     --dataset ${DS} \\
     --method ${METHOD} \\
     --base-relax-scales "${BASE_RELAX_SCALES}" \\
