@@ -1,0 +1,23 @@
+ptbenchmark/tests/test_method.py
+  s_3bb9d8c105b7a7::t_cf0cf7eb31823b 92,96,146,149-224
+ptbenchmark/app.py
+  s_3bb9d8c105b7a7::t_cbab98415daae3 129-133,144-157
+sbatch/submit_missing_reviewer_jobs.sh
+  s_3bb9d8c105b7a7::t_9e5299368acbe7 21-40,104-109,117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "62bed57e83a76c1fad71dc41c9890935b36b6bc3",
+  "prompts": {},
+  "sessions": {
+    "s_3bb9d8c105b7a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e6b1c-0f00-77f0-a6d3-eda9f46afd36",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Riccardo Ceccaroni <riccardo.ceccaroni.95@gmail.com>"
+    }
+  }
+}
