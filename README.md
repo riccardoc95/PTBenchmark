@@ -11,7 +11,7 @@ The command-line interface is built using **Typer** and is the main entry point 
 Clone the repository and install it in editable mode:
 
 ```bash
-git clone https://github.com/<your-org>/PTBenchmark.git
+git clone https://github.com/riccardoc95/PTBenchmark.git
 cd PTBenchmark
 pip install -e .
 ```
