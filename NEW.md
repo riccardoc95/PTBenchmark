@@ -8,7 +8,7 @@ This file lists only the new commands needed for the reviewer response, assuming
 cd ~/PTBenchmark
 git pull
 git submodule update --init --recursive
-conda run -n ptbenchmark pip install -e .
+ptbenchmark pip install -e .
 ```
 
 ## 2. Launch The Requests Jobs
