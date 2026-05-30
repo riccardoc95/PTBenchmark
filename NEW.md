@@ -1,6 +1,4 @@
-# Reviewer Experiments
-
-This file lists only the new commands needed for the reviewer response, assuming the older benchmark jobs have already been run.
+# New Experiments
 
 ## 1. Update The HPC Checkout
 
