@@ -6,31 +6,31 @@ def compare_results(h5_path):
     results = []
 
     with h5py.File(h5_path, "r") as f:
-        # Loop su dataset (es. CBSD68, SEN2VENUS, ...)
+        # Iterate over datasets (for example, CBSD68 and SEN2VENUS).
         for dataset_name in f.keys():
             dataset_group = f[dataset_name]
 
-            # Loop sui subset
+            # Iterate over subsets.
             for subset_name in dataset_group.keys():
                 subset_group = dataset_group[subset_name]
 
-                # Loop sulle immagini
+                # Iterate over images.
                 for image_name in subset_group.keys():
                     img_group = subset_group[image_name]
 
-                    # --- Versione standard ---
+                    # --- Standard version ---
                     grp_std = img_group["perstree_rec"]
                     mse_std = grp_std.attrs["mse"]
                     params_std = json.loads(grp_std.attrs["params"])
                     niter_std = params_std.get("niter", None)
 
-                    # --- Versione con SEC ---
+                    # --- SEC version ---
                     grp_sec = img_group["perstree_rec_sec"]
                     mse_sec = grp_sec.attrs["mse"]
                     params_sec = json.loads(grp_sec.attrs["params"])
                     niter_sec = params_sec.get("niter", None)
 
-                    # --- Aggiungi risultati alla lista ---
+                    # --- Append results ---
                     results.append({
                         "dataset": dataset_name,
                         "subset": subset_name,
@@ -43,22 +43,22 @@ def compare_results(h5_path):
                         "Δniter": niter_sec - niter_std
                     })
 
-    # Converte in DataFrame per analisi facile
+    # Convert to a DataFrame for convenient analysis.
     df = pd.DataFrame(results)
     return df
 
 
-# --- ESEMPIO DI UTILIZZO ---
+# --- USAGE EXAMPLE ---
 h5_path = "results/results_spatial_entropy_change.h5"
 df = compare_results(h5_path)
 
-# Mostra riepilogo generale
-print("\n📊 Summary by dataset:")
+# Show the overall summary.
+print("\nSummary by dataset:")
 print(df.groupby("dataset")[["mse_std", "mse_sec", "Δmse", "niter_std", "niter_sec", "Δniter"]].mean().round(4))
 
-# Mostra qualche esempio
-print("\n🔍 Sample rows:")
+# Show a few examples.
+print("\nSample rows:")
 print(df.head())
 
-# Eventuale esportazione
+# Optional export.
 df.to_csv("results_comparison.csv", index=False)

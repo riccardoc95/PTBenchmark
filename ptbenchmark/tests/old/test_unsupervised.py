@@ -16,32 +16,32 @@ def save_image_result(dataset_name, subset, image_name,
                       median_data, gaussian_data, wavelet_data, nlmeans_data, bm3d_data,
                       output_file, max_retries=10):
     """
-    Salva i risultati di una singola immagine in un file HDF5.
-    Se il file è bloccato da un altro processo, aspetta 2 secondi e riprova.
+    Save the results for a single image to an HDF5 file.
+    If another process locks the file, wait two seconds and retry.
     """
     retries = 0
     while retries < max_retries:
         try:
-            # Apertura in modalità append
+            # Open in append mode.
             with h5py.File(output_file, "a") as h5f:
                 dataset_group = h5f.require_group(dataset_name)
                 subset_group = dataset_group.require_group(subset)
                 img_group = subset_group.require_group(image_name)
 
-                # --- Dati principali ---
+                # --- Primary data ---
                 if "img" not in img_group:
                     img_group.create_dataset("img", data=img, compression="gzip")
                 if "gth" not in img_group:
                     img_group.create_dataset("gth", data=gth, compression="gzip")
 
-                # --- Perstree senza cut ---
+                # --- Perstree without cut ---
                 grp_p = img_group.require_group("perstree_rec")
                 grp_p.create_dataset("data", data=perstree_data["rec"], compression="gzip")
                 grp_p.attrs["mse"] = perstree_data["mse"]
                 grp_p.attrs["params"] = json.dumps(perstree_data["params"])
                 grp_p.attrs["training_time"] = perstree_data["time"]
 
-                # --- Perstree con cut ---
+                # --- Perstree with cut ---
                 grp_pc = img_group.require_group("perstree_rec_cut")
                 grp_pc.create_dataset("data", data=perstree_cut_data["rec"], compression="gzip")
                 grp_pc.attrs["mse"] = perstree_cut_data["mse"]
@@ -90,17 +90,17 @@ def save_image_result(dataset_name, subset, image_name,
                 grp_bm.attrs["params"] = json.dumps(bm3d_data["params"])
                 grp_bm.attrs["training_time"] = bm3d_data["time"]
 
-            # Se tutto va bene, esce dal loop
+            # Exit the loop after a successful write.
             break
 
         except (OSError, BlockingIOError) as e:
-            print(f"⚠️  File HDF5 bloccato. Retry {retries+1}/{max_retries} in 5 secondi...")
+            print(f"HDF5 file is locked. Retry {retries+1}/{max_retries} in 5 seconds...")
             time.sleep(5)
             retries += 1
 
     else:
-        # Se dopo max_retries non si riesce a scrivere, solleva l'errore
-        raise RuntimeError(f"Impossibile scrivere su {output_file} dopo {max_retries} tentativi.")
+        # Raise the error if all write attempts fail.
+        raise RuntimeError(f"Unable to write to {output_file} after {max_retries} attempts.")
 
 
 

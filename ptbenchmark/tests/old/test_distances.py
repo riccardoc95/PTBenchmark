@@ -14,18 +14,18 @@ LIST_OF_DISTANCES = {"RD": rd_distance, "RF": rf_distance}
 
 
 def process_single_image(image_name, img, gth, lfunction):
-    # costruzione alberi
+    # Build the trees.
     img_tree = PersTree(img, cut=False)
     img_tree_cut = PersTree(img, lifetime_t=None, cut=True, cut_mode="nearest")
     gth_tree = PersTree(gth, cut=False)
 
-    # funzione obiettivo per Optuna
+    # Define the Optuna objective function.
     def objective(trial):
         lifetime_t = trial.suggest_float("lifetime_t", 0, 1)
         img_tree_cut_opt = PersTree(img, lifetime_t=lifetime_t, cut=True, cut_mode="nearest")
         return lfunction(img_tree_cut_opt, gth_tree)
 
-    # studio ottimizzazione
+    # Run the optimization study.
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=50, show_progress_bar=False)
 

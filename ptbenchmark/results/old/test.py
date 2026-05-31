@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from astropy.visualization import ZScaleInterval
 
-# === Percorsi ===
+# === Paths ===
 H5_PATH = "sbatch/merged.h5"
 OUTPUT_JSON = "sbatch/results_summary.json"
 OUTPUT_TEX_TABLES = "paper/tables.tex"
@@ -19,7 +19,7 @@ OUTPUT_FIG_DIR = "paper/plots"
 os.makedirs("paper", exist_ok=True)
 os.makedirs(OUTPUT_FIG_DIR, exist_ok=True)
 
-# === Parametri globali ===
+# === Global parameters ===
 methods = [
     "perstree", "perstree_cut", "perstree_rec_sec", "peronamalik", "median",
     "gaussian", "wavelet", "nlmeans", "bm3d", "unet", "dncnn"
@@ -79,7 +79,7 @@ def build_results_with_distances(h5_path, output_json):
 
                 results[dataset_name][subset_name] = {}
 
-                # --- Metriche standard ---
+                # --- Standard metrics ---
                 for method in methods:
                     stats_path = f"{dataset_name}/{subset_name}/{method}_stats"
                     if stats_path not in f:
@@ -127,7 +127,7 @@ def build_results_with_distances(h5_path, output_json):
                         }
                     }
 
-    # --- Salva su JSON ---
+    # --- Save as JSON ---
     os.makedirs(os.path.dirname(output_json), exist_ok=True)
     with open(output_json, "w") as f_json:
         json.dump(results, f_json, indent=4)
@@ -138,10 +138,11 @@ def build_results_with_distances(h5_path, output_json):
 
 def generate_tables_tex(results, output_path):
     """
-    Scrive in output_path i comandi LaTeX per:
-      - Tabella Metrics (MSE/PSNR) con shading top-3 su MSE (↓ meglio)
-      - Tabella Times (Training/Exec) con shading top-3 su TRAINING_TIME (↓ meglio)
-    Ritorna la lista dei comandi creati.
+    Write LaTeX commands to output_path for:
+      - the Metrics table (MSE/PSNR), shading the top three MSE values (lower is better);
+      - the Times table (Training/Exec), shading the top three TRAINING_TIME values
+        (lower is better).
+    Return the list of generated commands.
     """
     method_names = {
         "perstree": "Unfiltered Tree Diffusion",
@@ -178,17 +179,17 @@ def generate_tables_tex(results, output_path):
             lines.append("\\midrule")
 
             for subset_name, vals in subsets.items():
-                # considera solo i metodi presenti in questo subset
+                # Consider only methods available for this subset.
                 present_methods = [m for m in methods_order if m in vals]
                 if not present_methods:
                     continue
 
                 subset_label = subset_name.replace("_", "\\_")
                 lines.append(f"\\multicolumn{{3}}{{l}}{{\\textit{{Subset: {subset_label}}}}}\\\\")
-                # calcolo best per bold
+                # Find the best value to render in bold.
                 best_mse = min(vals[m]["mean"]["MSE"] for m in present_methods)
                 best_psnr = max(vals[m]["mean"]["PSNR"] for m in present_methods)
-                # ranking per shading (MSE crescente)
+                # Rank values for shading by ascending MSE.
                 ranked = sorted(present_methods, key=lambda m: vals[m]["mean"]["MSE"])
                 rank_map = {m: r for r, m in enumerate(ranked)}
 
@@ -238,8 +239,8 @@ def generate_tables_tex(results, output_path):
                 subset_label = subset_name.replace("_", "\\_")
                 lines.append(f"\\multicolumn{{3}}{{l}}{{\\textit{{Subset: {subset_label}}}}}\\\\")
 
-                # ranking per shading: TRAINING_TIME crescente (veloce = meglio)
-                # (se manca TRAINING_TIME, usa +inf per mandarlo in fondo)
+                # Rank values for shading by ascending TRAINING_TIME.
+                # Use +inf for missing values so they appear last.
                 ranked = sorted(
                     present_methods,
                     key=lambda m: (vals[m]["mean"].get("TRAINING_TIME", float("inf")))
@@ -251,7 +252,7 @@ def generate_tables_tex(results, output_path):
                     top3[2]: "[gray]{0.96}" if len(top3) > 2 else None,
                 }
 
-                # opzionale: bold sui migliori (minimi)
+                # Optionally render the lowest values in bold.
                 best_train = min(vals[m]["mean"].get("TRAINING_TIME", float("inf")) for m in present_methods)
                 best_exec = min(vals[m]["mean"].get("TIME", float("inf")) for m in present_methods)
 
@@ -400,27 +401,27 @@ def generate_plots_tex(h5_path, output_tex, output_fig_dir, num_examples_per_sub
 
 
 # ----------------------------------------------------------
-# 5️⃣ MAIN PIPELINE
+# 5. MAIN PIPELINE
 # ----------------------------------------------------------
 def main():
-    print("📘 Lettura HDF5 e costruzione results...")
+    print("Reading HDF5 data and building results...")
     results = build_results_with_distances(H5_PATH, OUTPUT_JSON)
-    print("📗 Generazione tabelle metriche...")
+    print("Generating metric tables...")
     table_cmds = generate_tables_tex(results, OUTPUT_TEX_TABLES)
 
-    print("📙 Generazione tabelle distanze...")
+    print("Generating distance tables...")
     distance_cmds = generate_distance_tables_tex(results, OUTPUT_TEX_DISTANCES)
 
-    print("📕 Generazione plot immagini migliori...")
+    print("Generating plots for the best images...")
     plot_cmds = generate_plots_tex(H5_PATH, OUTPUT_TEX_PLOTS, OUTPUT_FIG_DIR)
 
-    # Unione di tutti i comandi
+    # Combine all generated commands.
     all_cmds = table_cmds + distance_cmds + plot_cmds
     with open(OUTPUT_TXT_ALL, "w") as f_all:
         for c in all_cmds:
             f_all.write(c + "\n")
 
-    print("\n✅ Tutti i file generati:")
+    print("\nAll files generated:")
     print(f"   Tables:    {OUTPUT_TEX_TABLES}")
     print(f"   Distances: {OUTPUT_TEX_DISTANCES}")
     print(f"   Plots:     {OUTPUT_TEX_PLOTS}")

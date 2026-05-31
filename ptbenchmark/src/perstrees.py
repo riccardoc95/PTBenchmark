@@ -60,10 +60,10 @@ class PersTree:
 
                 mask = labels != -1
 
-                # Calcolo della distanza e degli indici del punto valido più vicino
+                # Find the nearest valid point and its distance.
                 dist, (idx_x, idx_y) = ndimage.distance_transform_edt(~mask, return_indices=True)
 
-                # Assegniamo ad ogni -1 l’etichetta più vicina
+                # Replace each missing label with the nearest valid label.
                 labels[~mask] = labels[idx_x[~mask], idx_y[~mask]]
                 edges[~mask] = edges[idx_x[~mask], idx_y[~mask]]
                 labels = labels.astype(np.int32).flatten()
@@ -111,7 +111,7 @@ class PersTree:
 
         N = features.shape[0]
 
-        # inizializziamo lista dei figli per ogni nodo
+        # Initialize the child list for each node.
         children_lists = [[] for _ in range(N)]
         parent = np.full(N, -1, dtype=np.int32)
 
@@ -121,7 +121,7 @@ class PersTree:
             children_lists[p].append(c)
             parent[c] = p
 
-        # costruiamo CSR arrays
+        # Build the CSR arrays.
         child_index = np.zeros(N, dtype=np.int32)
         children_all = []
 
@@ -154,11 +154,11 @@ class PersTree:
         return self.features[node_id]
 
     def set_features(self, node_id: int, values: np.ndarray):
-        """Sostituisce tutte le feature del nodo."""
+        """Replace all features of the node."""
         self.features[node_id] = values
 
     def set_feature(self, node_id: int, dim: int, value: float):
-        """Modifica una singola feature (colonna) del nodo."""
+        """Update a single node feature (column)."""
         self.features[node_id, dim] = value
 
     def dist_from_root(self):
@@ -174,6 +174,5 @@ class PersTree:
             to_update = np.array([i for i in to_update if parent[i] != -1])
             parent[to_update.astype(np.int32)] = parent[parent[to_update.astype(np.int32)].astype(np.int32)]
         return np.array(distance)
-
 
 

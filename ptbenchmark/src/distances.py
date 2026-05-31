@@ -15,13 +15,13 @@ def compute_subtree_leaves(tree):
     def dfs(node):
         children = tree.get_children(node)
         if len(children) == 0:
-            return {node}  # foglia
+            return {node}  # Leaf node.
         leaf_set = set()
         for c in children:
             leaf_set |= dfs(c)
         return leaf_set
 
-    # Calcola per tutti i nodi
+    # Compute the leaf set for every node.
     subtree_leaves = {}
     for i in range(tree.N):
         subtree_leaves[i] = dfs(i)
@@ -33,10 +33,10 @@ def get_splits(tree):
     splits = set()
 
     for node, leaves in subtree_leaves.items():
-        # Split valido se:
-        # - il nodo non è radice (parent != -1)
-        # - contiene almeno 2 foglie
-        # - non contiene tutte le foglie
+        # A split is valid when:
+        # - the node is not the root (parent != -1);
+        # - it contains at least two leaves;
+        # - it does not contain every leaf.
         if tree.get_parent(node) != -1 and 1 < len(leaves) < len(total_leaves):
             splits.add(frozenset(leaves))
 
@@ -65,4 +65,3 @@ def root_distance(tree1, tree2, normalize=True):
         return np.sum((tree1_dist - tree2_dist)**2) / tree2_dist.size / max(np.max(tree1_dist), np.max(tree1_dist))
     else:
         return np.sum((tree1_dist - tree2_dist)**2)
-

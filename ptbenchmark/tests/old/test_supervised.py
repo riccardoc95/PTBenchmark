@@ -76,11 +76,11 @@ def test_supervised(datasets_dir, output_folder, train_ratio=0.8, batch_size=8, 
             train_image_names = [dataset[i][0] for i in train_indices]
             valid_image_names = [dataset[i][0] for i in valid_indices]
 
-            # --- Salvataggio in .npy ---
+            # --- Save as .npy ---
             np.save(os.path.join(output_folder, f"{dataset_name}_{subset}_train_image_names.npy"), np.array(train_image_names))
             np.save(os.path.join(output_folder, f"{dataset_name}_{subset}_valid_image_names.npy"), np.array(valid_image_names))
 
-            # --- (Alternativa) Salvataggio in .txt ---
+            # --- Optional alternative: save as .txt ---
             #with open(os.path.join(output_folder, f"{dataset_name}_{subset}_train_image_names.txt"), "w") as f:
             #    f.writelines(f"{name}\n" for name in train_image_names)
 
@@ -132,12 +132,12 @@ def test_supervised(datasets_dir, output_folder, train_ratio=0.8, batch_size=8, 
 
                 end_train_time = time.time()
                 training_time = end_train_time - start_train_time
-                print(f"⏱️ Tempo di training: {training_time:.2f} secondi")
+                print(f"Training time: {training_time:.2f} seconds")
 
-                # Salvataggio
+                # Save the trained model.
                 torch.save(model.state_dict(), os.path.join(output_folder, f"{model_name}_{dataset_name}_{subset}_model.pth"))
 
-                # --- Salvataggio delle predizioni sul validation set ---
+                # --- Save predictions for the validation set ---
                 model.eval()
                 val_predictions = []
                 val_targets = []
@@ -156,7 +156,7 @@ def test_supervised(datasets_dir, output_folder, train_ratio=0.8, batch_size=8, 
 
                         total_pred_time.append(end_pred - start_pred)
 
-                        # Sposta su CPU e converti in numpy
+                        # Move to CPU and convert to NumPy.
                         outputs_np = outputs.squeeze(1).cpu().numpy()
                         targets_np = targets.squeeze(1).cpu().numpy()
 
@@ -164,16 +164,16 @@ def test_supervised(datasets_dir, output_folder, train_ratio=0.8, batch_size=8, 
                         val_targets.append(targets_np)
                         val_image_names.extend(image_names)
 
-                # Concatenazione di tutti i batch
+                # Concatenate all batches.
                 val_predictions = np.concatenate(val_predictions, axis=0)
                 val_targets = np.concatenate(val_targets, axis=0)
-                val_image_names = np.array(val_image_names, dtype='S')  # salva come stringhe byte
+                val_image_names = np.array(val_image_names, dtype='S')  # Store as byte strings.
 
                 avg_pred_time = np.mean(total_pred_time)
                 std_pred_time = np.std(total_pred_time)
-                print(f"🕒 Tempo medio predizione per immagine: {avg_pred_time:.4f} +/- {std_pred_time:.4f} secondi")
+                print(f"Average prediction time per image: {avg_pred_time:.4f} +/- {std_pred_time:.4f} seconds")
 
-                # --- Salvataggio in file .h5 ---
+                # --- Save as an .h5 file ---
                 with h5py.File(os.path.join(output_folder, f"{model_name}_{dataset_name}_{subset}_valid_results.h5"), "w") as f:
                     f.create_dataset("image_names", data=val_image_names)
                     f.create_dataset("predictions", data=val_predictions)
@@ -182,9 +182,9 @@ def test_supervised(datasets_dir, output_folder, train_ratio=0.8, batch_size=8, 
                     f.attrs["avg_prediction_time"] = avg_pred_time
                     f.attrs["std_prediction_time"] = std_pred_time
 
-                print(f"✅ File 'validation_results.h5' salvato con {len(val_image_names)} immagini.")
-                print(f"   ➜ training_time_sec = {training_time:.2f}")
-                print(f"   ➜ avg_prediction_time_per_image_sec = {avg_pred_time:.4f} +/- {std_pred_time:.4f}")
+                print(f"File 'validation_results.h5' saved with {len(val_image_names)} images.")
+                print(f"   training_time_sec = {training_time:.2f}")
+                print(f"   avg_prediction_time_per_image_sec = {avg_pred_time:.4f} +/- {std_pred_time:.4f}")
 
 
 if __name__ == "__main__":

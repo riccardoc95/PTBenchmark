@@ -205,11 +205,11 @@ def validate(model, dataloader, criterion, device):
             loss = criterion(outputs, targets)
             running_loss += loss.item() * inputs.size(0)
 
-            # Converti in numpy per metriche
+            # Convert to NumPy arrays for metric computation.
             outputs_np = outputs.squeeze(1).cpu().numpy()
             targets_np = targets.squeeze(1).cpu().numpy()
 
-            # Calcola PSNR e SSIM per ogni immagine
+            # Compute PSNR and SSIM for each image.
             for pred, gt in zip(outputs_np, targets_np):
                 pred = np.clip(pred, 0, 1)
                 gt = np.clip(gt, 0, 1)

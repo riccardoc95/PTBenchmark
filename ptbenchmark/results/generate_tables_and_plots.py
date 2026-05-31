@@ -4,7 +4,7 @@ import json
 import string
 import numpy as np
 
-# === Percorsi ===
+# === Paths ===
 RESULTS_JSON = "sbatch/results_summary.json"
 OUTPUT_TEX_TABLES = "paper/tables.tex"
 OUTPUT_TEX_DISTANCES = "paper/tables_distances.tex"
@@ -49,10 +49,11 @@ def number_to_letters(n):
 
 def generate_tables_tex(results, output_path):
     """
-    Scrive in output_path i comandi LaTeX per:
-      - Tabella Metrics (MSE/PSNR) con shading top-3 su MSE (↓ meglio)
-      - Tabella Times (Training/Exec) con shading top-3 su TRAINING_TIME (↓ meglio)
-    Ritorna la lista dei comandi creati.
+    Write LaTeX commands to output_path for:
+      - the Metrics table (MSE/PSNR), shading the top three MSE values (lower is better);
+      - the Times table (Training/Exec), shading the top three TRAINING_TIME values
+        (lower is better).
+    Return the list of generated commands.
     """
     method_names = {
         "perstree": "Unfiltered Tree Diffusion",
@@ -92,17 +93,17 @@ def generate_tables_tex(results, output_path):
             lines.append("\\midrule")
 
             for subset_name, vals in subsets.items():
-                # considera solo i metodi presenti in questo subset
+                # Consider only methods available for this subset.
                 present_methods = [m for m in methods_order if m in vals]
                 if not present_methods:
                     continue
 
                 subset_label = subset_name.replace("_", "\\_")
                 lines.append(f"\\multicolumn{{3}}{{l}}{{\\textit{{Subset: {subset_label}}}}}\\\\")
-                # calcolo best per bold
+                # Find the best value to render in bold.
                 best_mse = min(vals[m]["mean"]["MSE"] for m in present_methods)
                 best_psnr = max(vals[m]["mean"]["PSNR"] for m in present_methods)
-                # ranking per shading (MSE crescente)
+                # Rank values for shading by ascending MSE.
                 ranked = sorted(present_methods, key=lambda m: vals[m]["mean"]["MSE"])
                 rank_map = {m: r for r, m in enumerate(ranked)}
 
@@ -152,8 +153,8 @@ def generate_tables_tex(results, output_path):
                 subset_label = subset_name.replace("_", "\\_")
                 lines.append(f"\\multicolumn{{3}}{{l}}{{\\textit{{Subset: {subset_label}}}}}\\\\")
 
-                # ranking per shading: TRAINING_TIME crescente (veloce = meglio)
-                # (se manca TRAINING_TIME, usa +inf per mandarlo in fondo)
+                # Rank values for shading by ascending TRAINING_TIME.
+                # Use +inf for missing values so they appear last.
                 ranked = sorted(
                     present_methods,
                     key=lambda m: (vals[m]["mean"].get("TRAINING_TIME", float("inf")))
@@ -165,7 +166,7 @@ def generate_tables_tex(results, output_path):
                     top3[2]: "[gray]{0.96}" if len(top3) > 2 else None,
                 }
 
-                # opzionale: bold sui migliori (minimi)
+                # Optionally render the lowest values in bold.
                 best_train = min(vals[m]["mean"].get("TRAINING_TIME", float("inf")) for m in present_methods)
                 best_exec = min(vals[m]["mean"].get("TIME", float("inf")) for m in present_methods)
 
@@ -274,16 +275,16 @@ def generate_plots_tex(results, output_tex):
 def main():
     with open(RESULTS_JSON, "r") as f:
         results = json.load(f)
-    print("📗 Generazione tabelle metriche...")
+    print("Generating metric tables...")
     t1 = generate_tables_tex(results, OUTPUT_TEX_TABLES)
-    print("📙 Generazione tabelle distanze...")
+    print("Generating distance tables...")
     t2 = generate_distance_tables_tex(results, OUTPUT_TEX_DISTANCES)
-    print("📕 Generazione plot immagini migliori...")
+    print("Generating plots for the best images...")
     t3 = generate_plots_tex(results, OUTPUT_TEX_PLOTS)
 
     with open(OUTPUT_TXT_ALL, "w") as f:
         for c in (t1 + t2 + t3):
             f.write(c + "\n")
 
-    print(f"\n✅ File generati:\n- Tables: {OUTPUT_TEX_TABLES}\n- Distances: {OUTPUT_TEX_DISTANCES}\n"
+    print(f"\nGenerated files:\n- Tables: {OUTPUT_TEX_TABLES}\n- Distances: {OUTPUT_TEX_DISTANCES}\n"
           f"- Plots: {OUTPUT_TEX_PLOTS}\n- Commands: {OUTPUT_TXT_ALL}")

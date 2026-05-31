@@ -121,13 +121,13 @@ def test_method(
                 valid_dataset, batch_size=batch_size, shuffle=False
             )
 
-            # Modello
+            # Model setup.
             model = supervised_methods[method_name.lower()]()
             model = model.to(device)
             criterion = nn.MSELoss()
             optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
-            # Training
+            # Training phase.
             start_train = time.time()
             for epoch in range(n_epochs):
                 train_loss = train_one_epoch(
@@ -223,7 +223,7 @@ def test_method(
                         add_to_summary=False,
                     )
 
-            # Metriche globali
+            # Aggregate metrics.
             metrics = {
                 "mean_mse": np.mean(all_mse),
                 "var_mse": np.var(all_mse),
@@ -260,7 +260,7 @@ def test_method(
 
     else:
         if method_name.lower() not in unsupervised_methods:
-            raise ValueError(f"Metodo non riconosciuto: {method_name}")
+            raise ValueError(f"Unknown method: {method_name}")
 
         denoise_func = unsupervised_methods[method_name.lower()]
 
@@ -300,7 +300,7 @@ def test_method(
                     },
                 )
 
-            # Statistiche globali
+            # Aggregate statistics.
             metrics = {
                 "mean_mse": np.mean(all_mse),
                 "var_mse": np.var(all_mse),
@@ -340,6 +340,6 @@ if __name__ == "__main__":
     datasets_dir = "datasets"
     output_file = os.path.join("results", "results_all.h5")
 
-    # Esempio:
+    # Example:
     test_method("perstree", "FORECAST", datasets_dir, output_file)
     # test_method("UNet", "CBSD68", datasets_dir, output_file, device="cpu", n_epochs=5)

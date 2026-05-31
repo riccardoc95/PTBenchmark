@@ -55,7 +55,7 @@ def process_single_image(img, gth, lfunction):
 
 def test_pt_distance(datasets_dir, dataset_name, output_file, distance="RD"):
     if distance not in LIST_OF_DISTANCES:
-        raise ValueError(f"Distanza sconosciuta: {distance}. Scelte valide: {list(LIST_OF_DISTANCES.keys())}")
+        raise ValueError(f"Unknown distance: {distance}. Valid choices: {list(LIST_OF_DISTANCES.keys())}")
 
     lfunction = LIST_OF_DISTANCES[distance]
 
@@ -91,7 +91,7 @@ def test_pt_distance(datasets_dir, dataset_name, output_file, distance="RD"):
             for k, v in stats.items():
                 stats_group.attrs[k] = float(v)
 
-        print("\nStatistiche per subset:", subset)
+        print("\nStatistics for subset:", subset)
         print(f"  - noisy_dist : mean={stats['noisy_mean']:.4f}, var={stats['noisy_var']:.4f}")
         print(f"  - mjump_dist : mean={stats['mjump_mean']:.4f}, var={stats['mjump_var']:.4f}")
         print(f"  - optuna_dist: mean={stats['optuna_mean']:.4f}, var={stats['optuna_var']:.4f}\n")

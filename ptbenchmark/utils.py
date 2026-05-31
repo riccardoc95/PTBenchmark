@@ -4,26 +4,26 @@ from pathlib import Path
 import typer
 
 def copy_group(src, dst):
-    """Copia ricorsivamente gruppi e dataset senza cancellare quelli già esistenti."""
+    """Recursively copy groups and datasets without deleting existing entries."""
     for key, item in src.items():
         if isinstance(item, h5py.Group):
-            # Se il gruppo non esiste, crealo
+            # Create the group only when it does not already exist.
             if key not in dst:
                 dst_group = dst.create_group(key)
-                # Copia anche gli attributi del gruppo
+                # Copy the group attributes as well.
                 for attr, val in item.attrs.items():
                     dst_group.attrs[attr] = val
             else:
                 dst_group = dst[key]
-            # Ricorsione per i sottogruppi
+            # Recurse into nested groups.
             copy_group(item, dst_group)
 
         elif isinstance(item, h5py.Dataset):
-            # Se il dataset non esiste, copialo
+            # Copy the dataset only when it does not already exist.
             if key not in dst:
                 src.copy(key, dst)
             else:
-                print(f"Dataset già presente: {key}, saltato")
+                print(f"Dataset already exists: {key}, skipped")
 
 def merge_h5_files(input_dir, output_file):
     input_dir = Path(input_dir)

@@ -9,14 +9,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.visualization import ZScaleInterval
 
-# === Percorsi ===
+# === Paths ===
 H5_PATH = "sbatch/merged.h5"
 OUTPUT_JSON = "sbatch/results_summary.json"
 OUTPUT_IMG_DIR = "paper/plots_best"
 os.makedirs("sbatch", exist_ok=True)
 os.makedirs(OUTPUT_IMG_DIR, exist_ok=True)
 
-# === Parametri globali ===
+# === Global parameters ===
 methods = [
     "perstree", "perstree_cut", "perstree_rec_sec", "peronamalik", "median",
     "gaussian", "wavelet", "nlmeans", "bm3d", "unet", "dncnn",
@@ -50,7 +50,7 @@ def build_results_and_images(h5_path, output_json, output_img_dir):
 
                 results[dataset_name][subset_name] = {}
 
-                # --- Metriche standard ---
+                # --- Standard metrics ---
                 for method in methods:
                     stats_path = f"{dataset_name}/{subset_name}/{method}_stats"
                     if stats_path not in f:
@@ -130,7 +130,7 @@ def build_results_and_images(h5_path, output_json, output_img_dir):
     with open(output_json, "w") as f_json:
         json.dump(results, f_json, indent=4)
 
-    print(f"\nRisultati e immagini salvati in:\n  - JSON: {output_json}\n  - Images: {output_img_dir}")
+    print(f"\nResults and images saved to:\n  - JSON: {output_json}\n  - Images: {output_img_dir}")
     return results
 
 

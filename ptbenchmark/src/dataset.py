@@ -4,15 +4,15 @@ import os
 
 
 def rgb_to_grayscale(rgb_array):
-    # Controlla se i canali sono nella prima dimensione o nell'ultima
+    # Accept either channel-first or channel-last RGB arrays.
     if rgb_array.shape[0] == 3:
-        # canali come prima dimensione (3, H, W)
+        # Channels are stored in the first dimension: (3, H, W).
         R, G, B = rgb_array[0], rgb_array[1], rgb_array[2]
     elif rgb_array.shape[-1] == 3:
-        # canali come ultima dimensione (H, W, 3)
+        # Channels are stored in the last dimension: (H, W, 3).
         R, G, B = rgb_array[..., 0], rgb_array[..., 1], rgb_array[..., 2]
     else:
-        raise ValueError("Input rgb_array non ha 3 canali nella prima o ultima dimensione")
+        raise ValueError("Input rgb_array does not have 3 channels in the first or last dimension")
     
     grayscale = 0.2989 * R + 0.5870 * G + 0.1140 * B
     return grayscale.astype(np.uint16)
@@ -81,5 +81,3 @@ class Dataset:
             gth = (gth - gth.min()) / (gth.max() - gth.min())
 
         return gth
-        
-                

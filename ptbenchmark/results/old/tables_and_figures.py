@@ -26,7 +26,7 @@ def load_restored_and_gth(model_name, dataset_name, subset):
     )
 
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File non trovato: {file_path}")
+        raise FileNotFoundError(f"File not found: {file_path}")
 
     with h5py.File(file_path, "r") as f:
         image_names = f["image_names"][:]
@@ -41,7 +41,7 @@ def load_restored_and_gth(model_name, dataset_name, subset):
 
     return restored, gth, image_names, training_time, avg_pred_time, std_pred_time
 
-# Funzione di calcolo metriche
+# Metric computation helper.
 def compute_metrics(rec, gth):
     rec = np.clip(rec, 0, 1)
     gth = np.clip(gth, 0, 1)
@@ -50,7 +50,7 @@ def compute_metrics(rec, gth):
     psnr = peak_signal_noise_ratio(gth, rec, data_range=data_range)
     return {"MSE": mse, "PSNR": psnr}
 
-# Helper funzioni per media e std
+# Helpers for mean and standard deviation.
 def avg_metrics(metrics_list):
     return {k: np.mean([m[k] for m in metrics_list]) for k in ["MSE", "PSNR", "TIME", "EXEC_TIME"]}
 
@@ -64,7 +64,7 @@ with h5py.File(h5_path, "r") as h5f:
     for dataset_name in h5f.keys():
         results[dataset_name] = {}
         dataset_group = h5f[dataset_name]
-        print(f"\n📁 Read Dataset: {dataset_name}")
+        print(f"\nReading dataset: {dataset_name}")
 
         list_sets = sorted(
             dataset_group.keys(),
@@ -74,9 +74,9 @@ with h5py.File(h5_path, "r") as h5f:
 
         for subset_name in list_sets:
             subset_group = dataset_group[subset_name]
-            print(f"  📂 Subset: {subset_name}")
+            print(f"  Subset: {subset_name}")
 
-            # Liste per accumulare metriche per immagine
+            # Accumulate per-image metrics.
             metrics_perstree = [] 
             metrics_perstree_cut = [] 
             metrics_peronamalik = []
@@ -94,7 +94,7 @@ with h5py.File(h5_path, "r") as h5f:
                     img_group = subset_group[image_name]
 
                     gth = np.array(img_group["gth"]).astype(np.float32)
-                    gth /= gth.max() if gth.max() > 1 else 1  # normalizzazione
+                    gth /= gth.max() if gth.max() > 1 else 1  # Normalize the ground truth.
 
                     # --- Perstree ---
                     rec = np.array(img_group["perstree_rec"]["data"])
@@ -118,14 +118,14 @@ with h5py.File(h5_path, "r") as h5f:
                     metrics_peronamalik.append({**compute_metrics(rec_pm, gth), 
                                                 "TIME": time_pm, "EXEC_TIME": time_exec_pm})
 
-                    # --- Filtro Mediano ---
+                    # --- Median filter ---
                     rec_median = np.array(img_group["median_rec"]["data"])
                     time_median = img_group["median_rec"].attrs["training_time"]
                     time_exec_median = json.loads(img_group["median_rec"].attrs["params"])["time"]
                     metrics_median.append({**compute_metrics(rec_median, gth), 
                                            "TIME": time_median, "EXEC_TIME": time_exec_median})
 
-                    # --- Filtro Gaussiano ---
+                    # --- Gaussian filter ---
                     rec_gauss = np.array(img_group["gaussian_rec"]["data"])
                     time_gauss = img_group["gaussian_rec"].attrs["training_time"]
                     time_exec_gauss = json.loads(img_group["gaussian_rec"].attrs["params"])["time"]
@@ -190,7 +190,7 @@ with h5py.File(h5_path, "r") as h5f:
                 dncnn_std = {"MSE":np.nan, "PSNR":np.nan, "SSIM":np.nan, "TIME":np.nan, "EXEC_TIME":np.nan}
 
 
-            # Calcolo medie e deviazioni standard per subset
+            # Compute per-subset means and standard deviations.
             results[dataset_name][subset_name] = {
                 "perstree": {
                     "mean": avg_metrics(metrics_perstree),
@@ -238,14 +238,14 @@ with h5py.File(h5_path, "r") as h5f:
             m_p = results[dataset_name][subset_name]["perstree"]["mean"]
             m_pc = results[dataset_name][subset_name]["perstree_cut"]["mean"]
 
-            # Controllo “vittoria” (PSNR più alto e MSE più basso)
+            # Check whether the candidate wins: higher PSNR and lower MSE.
             is_perstree_better = (
                 (m_p.get("MSE", np.inf) < m_pc.get("MSE", np.inf))
             )
 
             if is_perstree_better:
-                print(f"🔁 Inverting results for {dataset_name} / {subset_name} (Perstree better than Perstree_cut)")
-                # Scambia mean e std
+                print(f"Inverting results for {dataset_name} / {subset_name} (Perstree better than Perstree_cut)")
+                # Swap the mean and standard deviation.
                 tmp = results[dataset_name][subset_name]["perstree"]
                 results[dataset_name][subset_name]["perstree"] = results[dataset_name][subset_name]["perstree_cut"]
                 results[dataset_name][subset_name]["perstree_cut"] = tmp
@@ -305,12 +305,12 @@ def print_tables_by_dataset(results):
                 subset_label = subset_name.replace("_", "\\_")
                 print(f"\\multicolumn{{3}}{{l}}{{\\textit{{Subset: {subset_label}}}}}\\\\")
 
-            # Ordina per MSE crescente
+            # Sort by ascending MSE.
             ranked_methods = sorted(vals.items(), key=lambda kv: kv[1]["mean"]["MSE"])
             best_mse = min(v["mean"]["MSE"] for v in vals.values())
             best_psnr = max(v["mean"]["PSNR"] for v in vals.values())
 
-            # Shading per top-3 metodi
+            # Shade the top three methods.
             row_shades = {0: "[gray]{0.90}", 1: "[gray]{0.93}", 2: "[gray]{0.96}"}
             mse_ranks = {method: rank for rank, (method, _) in enumerate(ranked_methods)}
 
@@ -326,7 +326,7 @@ def print_tables_by_dataset(results):
                 if psnr_val == best_psnr:
                     psnr_str = bold(psnr_str)
 
-                # shading per top 3
+                # Apply shading to the top three methods.
                 rank = mse_ranks.get(method, 99)
                 row_prefix = f"\\rowcolor{row_shades[rank]} " if rank in row_shades else ""
 
@@ -376,14 +376,14 @@ def print_tables_by_dataset(results):
                 subset_label = subset_name.replace("_", "\\_")
                 print(f"\\multicolumn{{3}}{{l}}{{\\textbf{{Subset:}} \\textit{{{subset_label}}}}}\\\\")
 
-            # Trova i migliori 3 metodi per TIME (senza cambiare ordine)
+            # Find the three fastest methods without changing display order.
             mse_sorted = sorted(vals.items(), key=lambda kv: kv[1]["mean"]["TIME"])
             top3_methods = [m[0] for m in mse_sorted[:3]]
 
             best_mse = mse_sorted[0][1]["mean"]["TIME"]
             best_psnr = min(v["mean"]["EXEC_TIME"] for v in vals.values())
 
-            # Colori scala di grigio per i top-3 metodi
+            # Use grayscale colors for the top three methods.
             row_shades = {
                 top3_methods[0]: "[gray]{0.90}",
                 top3_methods[1]: "[gray]{0.93}" if len(top3_methods) > 1 else None,
@@ -398,13 +398,13 @@ def print_tables_by_dataset(results):
                 mse_str = f"{mse_val:.2f}$\\pm${std['TIME']:.2f}"
                 psnr_str = f"{psnr_val:.2f}$\\pm${std['EXEC_TIME']:.2f}"
 
-                # Bold per i migliori
+                # Render the best values in bold.
                 if mse_val == best_mse:
                     mse_str = bold(mse_str)
                 if psnr_val == best_psnr:
                     psnr_str = bold(psnr_str)
 
-                # Colore riga solo se è nei top-3
+                # Color the row only when the method is in the top three.
                 shade = row_shades.get(method)
                 row_prefix = f"\\rowcolor{shade} " if shade else ""
 
@@ -431,7 +431,7 @@ def print_tables_by_dataset(results):
         print("% End of runtime table\n")
 
 
-# Esegui generazione
+# Generate tables.
 print_tables_by_dataset(results)
 
 
@@ -472,7 +472,7 @@ all_commands = []
 with h5py.File(h5_path, "r") as h5f:
     for dataset_name in h5f.keys():
         dataset_group = h5f[dataset_name]
-        print(f"\n📁 Dataset: {dataset_name}")
+        print(f"\nDataset: {dataset_name}")
 
         list_sets = sorted(
             dataset_group.keys(),
@@ -482,9 +482,9 @@ with h5py.File(h5_path, "r") as h5f:
 
         for subset_name in list_sets:
             subset_group = dataset_group[subset_name]
-            print(f"  📂 Subset: {subset_name}")
+            print(f"  Subset: {subset_name}")
 
-            # Carica UNet e DnCNN se presenti
+            # Load UNet and DnCNN results when available.
             unet_image_names, unet_restored = [], []
             dncnn_image_names, dncnn_restored = [], []
             try:
@@ -497,7 +497,7 @@ with h5py.File(h5_path, "r") as h5f:
                 pass
 
 
-            # Trova immagini comuni a tutti i metodi disponibili
+            # Find images shared by all available methods.
             available_images = set(subset_group.keys())
             if len(unet_image_names)>0:
                 available_images = available_images.intersection(set(unet_image_names))
@@ -523,7 +523,7 @@ with h5py.File(h5_path, "r") as h5f:
 
                 img_group = subset_group[image_name]
 
-                # Metodi classici + PerSTree
+                # Classical methods and PerSTree.
                 img = normalize(np.array(img_group["img"]), dataset_name)
                 gth = normalize(np.array(img_group["gth"]), dataset_name)
                 perstree_rec = normalize(np.array(img_group["perstree_rec"]["data"]), dataset_name)
@@ -535,7 +535,7 @@ with h5py.File(h5_path, "r") as h5f:
                 nlmeans_rec = normalize(np.array(img_group["nlmeans_rec"]["data"]), dataset_name)
                 bm3d_rec = normalize(np.array(img_group["bm3d_rec"]["data"]), dataset_name)
 
-                # UNet e DnCNN, se presenti
+                # UNet and DnCNN, when available.
                 unet_img = None
                 dncnn_img = None
                 target_size = img.shape
@@ -579,33 +579,33 @@ with h5py.File(h5_path, "r") as h5f:
                     "Ground Truth": gth
                 }
 
-                # Numero di immagini da mostrare
+                # Number of images to display.
                 n_images = len(images_to_plot)
 
-                # Calcola numero di righe e colonne (ottimizzato per la visualizzazione)
+                # Compute a display-friendly number of rows and columns.
                 n_cols = 3
                 n_rows = int(np.ceil(n_images / n_cols))
 
                 fig, axes = plt.subplots(n_rows, n_cols, figsize=(3.5 * n_cols, 3.5 * n_rows))
                 axes = axes.flatten()
 
-                # Itera seguendo l'ordine del dizionario
+                # Preserve dictionary iteration order.
                 for i, (title, img_to_show) in enumerate(images_to_plot.items()):
                     ax = axes[i]
                     ax.imshow(img_to_show, cmap="gray", vmin=0, vmax=1)
                     ax.set_title(title, fontsize=15, weight="bold")
                     ax.axis("off")
 
-                # Rimuovi eventuali assi in eccesso
+                # Remove any unused axes.
                 for j in range(i + 1, len(axes)):
                     axes[j].axis("off")
 
-                # Ottimizza spazi e layout
+                # Adjust spacing and layout.
                 plt.tight_layout(pad=2.0)
                 #plt.suptitle(f"{dataset_name} - {subset_name} - {image_name}", fontsize=20, weight="bold", y=1.02)
                 plt.subplots_adjust(top=0.95)
 
-                # Mostra o salva
+                # Display or save the figure.
                 #plt.show()
                 plt.savefig(f"paper/plots/{dataset_name}_{subset_name}_{image_name}.png", bbox_inches='tight', dpi=150)
                 plt.close()
@@ -614,7 +614,7 @@ with h5py.File(h5_path, "r") as h5f:
                 base_name = re.sub(r'\d+', '', dataset_name + subset_name)
                 base_name = base_name.replace("_", "")
 
-                # Se il comando esiste già, aggiungi un contatore
+                # Add a counter when the command already exists.
                 count = created_commands.get(base_name, 0)
                 created_commands[base_name] = count + 1
 
@@ -662,7 +662,7 @@ import pandas as pd
 import glob
 import os
 
-# Percorso dei risultati
+# Results path.
 results_path = "results/distance"
 
 csv_files = glob.glob(os.path.join(results_path, "*.csv"))
@@ -673,10 +673,10 @@ for file in csv_files:
     filename = os.path.basename(file)
     parts = filename.replace(".csv", "").split("_")
 
-    # Esempio: CBSD68_train_RF_distance.csv
+    # Example: CBSD68_train_RF_distance.csv
     dataset_name = parts[0]
     subset_name = parts[1] if len(parts) > 2 else "unknown"
-    distance_type = parts[-2]  # RF o RD
+    distance_type = parts[-2]  # RF or RD.
 
     df = pd.read_csv(file)
 
@@ -693,7 +693,7 @@ for file in csv_files:
 
 summary_df = pd.DataFrame(summary_list).sort_values(by=["distance_type", "dataset", "subset"])
 
-# Funzione per creare tabella LaTeX con multirow e centrate
+# Build a centered LaTeX table with multirow cells.
 def make_latex_table(df, dist_type):
     lines = []
     lines.append("\\begin{table}[ht]")
@@ -720,24 +720,21 @@ def make_latex_table(df, dist_type):
             line = f"{dataset_cell} & {row['subset']} & {row['noisy']} & {row['mjump']} & {row['optuna']} \\\\"
             lines.append(line)
             first = False
-        lines.append("\\midrule")  # separa i dataset
+        lines.append("\\midrule")  # Separate datasets.
 
     lines.append("\\bottomrule")
     lines.append("\\end{tabular}")
     lines.append("\\end{table}")
     return "\n".join(lines)
 
-# Genera una tabella per ogni distanza
+# Generate one table for each distance.
 for dist_type, df_group in summary_df.groupby("distance_type"):
     #print("\n" + "="*60)
-    #print(f"Tabella per distanza: {dist_type}")
+    #print(f"Table for distance: {dist_type}")
     #print("="*60 + "\n")
     latex_code = make_latex_table(df_group, dist_type)
     print("\\newcommand{\\TableDistance"+dist_type+"}{")
     print(latex_code)
     print("}")
-
-
-
 
 

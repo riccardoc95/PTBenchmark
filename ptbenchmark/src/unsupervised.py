@@ -104,13 +104,13 @@ def bm3d_denoise(img, gth, sigma_list=[5, 10, 15, 20]):
 
 def anisodiff(u, u0, g, k, dt=0.2, T_max=500, tol=1e-10):
     """
-    Esegue la diffusione anisotropa di Perona-Malik.
-    Parametri:
-      u0 : immagine normalizzata [0,1]
-      g  : tipo di funzione conduttività (1–5)
-      k  : parametro di soglia
-      dt : passo temporale
-      T_max : massimo numero di iterazioni
+    Apply Perona-Malik anisotropic diffusion.
+    Parameters:
+      u0 : normalized image in [0, 1]
+      g  : conductivity function type (1-5)
+      k  : threshold parameter
+      dt : time step
+      T_max : maximum number of iterations
     """
     ni, nj = u.shape
     mse, mse_old = 1e3, 2e3
@@ -118,7 +118,7 @@ def anisodiff(u, u0, g, k, dt=0.2, T_max=500, tol=1e-10):
     for T in range(T_max):
         mse_old = mse
 
-        # differenze direzionali
+        # Directional differences.
         DuN = np.zeros_like(u)
         DuS = np.zeros_like(u)
         DuE = np.zeros_like(u)
@@ -129,7 +129,7 @@ def anisodiff(u, u0, g, k, dt=0.2, T_max=500, tol=1e-10):
         DuW[:, 1:] = u[:, :-1] - u[:, 1:]
         DuE[:, :-1] = u[:, 1:] - u[:, :-1]
 
-        # Conduttività
+        # Conductivity coefficients.
         if g == 1:
             cN = 1.0 / (1.0 + (DuN / k) ** 2)
             cS = 1.0 / (1.0 + (DuS / k) ** 2)
@@ -156,14 +156,14 @@ def anisodiff(u, u0, g, k, dt=0.2, T_max=500, tol=1e-10):
             f = lambda d: np.where(np.abs(d) != 0, 1 - np.exp(-3.31488 * (k / d) ** 8), 1)
             cN, cS, cW, cE = f(DuN), f(DuS), f(DuW), f(DuE)
         else:
-            raise ValueError("Filtro g deve essere un intero da 1 a 5")
+            raise ValueError("Filter g must be an integer from 1 to 5")
 
-        # Aggiornamento
+        # Update the diffused image.
         u_new = u + dt * (cN * DuN + cS * DuS + cW * DuW + cE * DuE)
 
         u = u_new
 
-        # MSE rispetto all'originale
+        # MSE relative to the original image.
         mse = np.mean((u - u0) ** 2)
         if mse_old <= mse or abs(mse_old - mse) / mse_old < tol:
             break

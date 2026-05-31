@@ -82,7 +82,7 @@ def test_sec(dataset_name, datasets_dir, output_file):
 
 
 
-        # Statistiche globali
+        # Aggregate statistics.
         metrics = {
             "mean_mse": np.mean(all_mse),
             "var_mse": np.var(all_mse),
@@ -98,7 +98,7 @@ def test_sec(dataset_name, datasets_dir, output_file):
 
         save_metrics_summary(output_file, dataset_name, subset, method_name, metrics)
 
-        print(f"\nStatistiche globali per subset '{subset}' ({method_name}):")
+        print(f"\nAggregate statistics for subset '{subset}' ({method_name}):")
         print(f"   MSE  mean={metrics['mean_mse']:.6f}, var={metrics['var_mse']:.6f}")
         print(f"   PSNR mean={metrics['mean_psnr']:.3f}, var={metrics['var_psnr']:.3f}")
         print(f"   SSIM mean={metrics['mean_ssim']:.3f}, var={metrics['var_ssim']:.3f}\n")
