@@ -1,0 +1,67 @@
+ptbenchmark/results/generate_tables_and_plots.py
+  s_20d4f0dffcbc55::t_492bcaffa46175 278,280,282
+  s_20d4f0dffcbc55::t_3c7af442e30097 7,52-56,96,103,106,156-157,169
+  s_20d4f0dffcbc55::t_6a3002906db237 289
+ptbenchmark/tests/old/test_distances.py
+  s_20d4f0dffcbc55::t_b9faa85e87fc44 17,22,28,56
+ptbenchmark/tests/old/test_supervised.py
+  s_20d4f0dffcbc55::t_b9faa85e87fc44 79,83,137,140,159,167,170,176,194
+  s_20d4f0dffcbc55::t_492bcaffa46175 135,174,185
+  s_20d4f0dffcbc55::t_6a3002906db237 186-187
+ptbenchmark/tests/test_method.py
+  s_20d4f0dffcbc55::t_bf36e37a67395e 124,130,226,263,303,343
+ptbenchmark/results/old/spatial_entropy_change.py
+  s_20d4f0dffcbc55::t_64af37170c454f 9,13,17,21,27,33,46,51,55,59,63
+  s_20d4f0dffcbc55::t_6a3002906db237 56,60
+ptbenchmark/tests/old/test_spatialentropy.py
+  s_20d4f0dffcbc55::t_b9faa85e87fc44 16-17,22,28,34,41,56
+  s_20d4f0dffcbc55::t_492bcaffa46175 51
+  s_20d4f0dffcbc55::t_5d551299ffb822 57
+ptbenchmark/src/perstrees.py
+  s_20d4f0dffcbc55::t_bf36e37a67395e 63,66,114,124,157,161
+ptbenchmark/tests/test_distance.py
+  s_20d4f0dffcbc55::t_bf36e37a67395e 94
+  s_20d4f0dffcbc55::t_dd9f7c75d98e49 58
+ptbenchmark/results/old/tables_and_figures.py
+  s_20d4f0dffcbc55::t_6a3002906db237 67,77,247,475,485
+  s_20d4f0dffcbc55::t_0c82b88d89b9a0 44,53,79,97,121,128,193,241,248,308,313,329,379,386,401,407,434,487,500,526,538,582,585,592,599,603,608,617,665,676,679,696,723,730,733
+  s_20d4f0dffcbc55::t_dd9f7c75d98e49 29
+ptbenchmark/src/distances.py
+  s_20d4f0dffcbc55::t_bf36e37a67395e 18,24,36-39
+ptbenchmark/utils.py
+  s_20d4f0dffcbc55::t_bf36e37a67395e 7,10,13,18,22,26,51
+ptbenchmark/results/build_results.py
+  s_20d4f0dffcbc55::t_3c7af442e30097 12,19,53,133
+ptbenchmark/src/dataset.py
+  s_20d4f0dffcbc55::t_bf36e37a67395e 7,9,12,15
+ptbenchmark/tests/old/test_unsupervised.py
+  s_20d4f0dffcbc55::t_5d551299ffb822 103
+  s_20d4f0dffcbc55::t_b9faa85e87fc44 19-20,25,31,37,44,93,102
+  s_20d4f0dffcbc55::t_492bcaffa46175 97
+ptbenchmark/src/supervised.py
+  s_20d4f0dffcbc55::t_bf36e37a67395e 208,212,223
+ptbenchmark/src/unsupervised.py
+  s_20d4f0dffcbc55::t_bf36e37a67395e 107,110-111,113,121,132,159,161,166
+  s_20d4f0dffcbc55::t_492bcaffa46175 108-109,112
+ptbenchmark/tests/test_sec.py
+  s_20d4f0dffcbc55::t_bf36e37a67395e 85,101
+ptbenchmark/results/old/test.py
+  s_20d4f0dffcbc55::t_64af37170c454f 11,22,82,130,141-145,182,189,192,242-243,255,418
+  s_20d4f0dffcbc55::t_492bcaffa46175 404,407,409,412,415,424
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "1345b09ef5952d1f1bb8224c3a9103656f1f5fcf",
+  "prompts": {},
+  "sessions": {
+    "s_20d4f0dffcbc55": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7e2d-bd39-7401-96d1-8e31ec6b6797",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Riccardo Ceccaroni <riccardo.ceccaroni.95@gmail.com>"
+    }
+  }
+}
