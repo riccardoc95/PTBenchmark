@@ -132,6 +132,7 @@ def perstree_anisodiff_sure(
     niter=10,
     h=1e-3,
     seed=123,
+    mc_samples=30,
     lifetime_t=None,
     cut=False,
     cut_mode="nearest",
@@ -146,6 +147,7 @@ def perstree_anisodiff_sure(
         niter=niter,
         h=h,
         seed=seed,
+        mc_samples=mc_samples,
         lifetime_t=lifetime_t,
         cut=cut,
         cut_mode=cut_mode,
@@ -162,6 +164,7 @@ def _perstree_anisodiff_sure_with_rec(
     niter=10,
     h=1e-3,
     seed=123,
+    mc_samples=30,
     lifetime_t=None,
     cut=False,
     cut_mode="nearest",
@@ -172,7 +175,6 @@ def _perstree_anisodiff_sure_with_rec(
     img = np.asarray(img, dtype=float)
     sigma = _estimate_noise_sd(img) if noise_sd is None else float(noise_sd)
     rng = np.random.default_rng(seed)
-    z = rng.normal(size=img.shape)
 
     denoised = perstree_anisodiff_fixed_iter(
         img,
@@ -184,18 +186,23 @@ def _perstree_anisodiff_sure_with_rec(
         guided_radius=guided_radius,
         epsilon_scale=epsilon_scale,
     )
-    denoised_perturbed = perstree_anisodiff_fixed_iter(
-        img + h * z,
-        niter=niter,
-        lifetime_t=lifetime_t,
-        cut=cut,
-        cut_mode=cut_mode,
-        base_relax_scale=base_relax_scale,
-        guided_radius=guided_radius,
-        epsilon_scale=epsilon_scale,
-    )
 
-    divergence = float(np.sum(z * (denoised_perturbed - denoised)) / h)
+    divergences = []
+    for _ in range(int(mc_samples)):
+        z = rng.normal(size=img.shape)
+        denoised_perturbed = perstree_anisodiff_fixed_iter(
+            img + h * z,
+            niter=niter,
+            lifetime_t=lifetime_t,
+            cut=cut,
+            cut_mode=cut_mode,
+            base_relax_scale=base_relax_scale,
+            guided_radius=guided_radius,
+            epsilon_scale=epsilon_scale,
+        )
+        divergences.append(float(np.sum(z * (denoised_perturbed - denoised)) / h))
+
+    divergence = float(np.mean(divergences))
     residual = float(np.sum((denoised - img) ** 2))
     sure = residual + 2.0 * sigma**2 * divergence - img.size * sigma**2
     return sure / img.size, denoised
@@ -210,6 +217,7 @@ def tune_perstree_anisodiff_niter_sure(
     noise_sd=None,
     h=1e-3,
     seed=123,
+    mc_samples=30,
     lifetime_t=None,
     cut=False,
     cut_mode="nearest",
@@ -261,6 +269,7 @@ def tune_perstree_anisodiff_niter_sure(
                         niter=niter,
                         h=h,
                         seed=seed + image_index,
+                        mc_samples=mc_samples,
                         lifetime_t=lifetime_t,
                         cut=cut,
                         cut_mode=cut_mode,
@@ -322,6 +331,7 @@ def tune_perstree_anisodiff_niter_sure_gaussian(
     max_images=None,
     h=1e-3,
     seed=123,
+    mc_samples=30,
     lifetime_t=None,
     cut=False,
     cut_mode="nearest",
@@ -364,6 +374,7 @@ def tune_perstree_anisodiff_niter_sure_gaussian(
                     niter=niter,
                     h=h,
                     seed=seed + image_index,
+                    mc_samples=mc_samples,
                     lifetime_t=lifetime_t,
                     cut=cut,
                     cut_mode=cut_mode,

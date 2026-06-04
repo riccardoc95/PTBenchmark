@@ -1,12 +1,12 @@
 from ptbenchmark.src import tune_perstree_anisodiff_niter_sure_gaussian
 
-
 DATASET = "CBSD68"
 DATASETS_DIR = "datasets"
 NOISE_LEVELS_255 = [5, 10, 15, 25, 35, 50]
-NITER_GRID = [1, 2, 3, 5, 10, 15, 20, 25, 30]
-MAX_IMAGES = 12
+NITER_GRID = [1, 3, 5, 10, 15, 20]
+MAX_IMAGES = 1
 SEED = 123
+MC_SAMPLES = 10
 
 
 def mean_std(summary, metric):
@@ -53,6 +53,7 @@ def run_noise_level(noise_level_255):
         max_images=MAX_IMAGES,
         h=1e-3,
         seed=SEED,
+        mc_samples=MC_SAMPLES,
         csv_file=f"results/sure_niter_{DATASET}_gaussian_sigma{noise_level_255}.csv",
     )
 
@@ -79,6 +80,7 @@ if __name__ == "__main__":
     print(f"Dataset: {DATASET}")
     print(f"Images per noise level: {MAX_IMAGES}")
     print(f"Iteration grid: {NITER_GRID}")
+    print(f"MC samples for SURE: {MC_SAMPLES}")
     print("Images are normalized to [0, 1], so sigma = noise / 255.\n")
 
     table_rows = []
